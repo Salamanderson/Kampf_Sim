@@ -60,20 +60,6 @@
     scene: [ Scenes.BootScene, Scenes.PreloadScene, Scenes.FightScene ]
   };
 
-  // ----- Layout Konstanten (mit FightScene synchron) -----
-  const GAME_W=1280, GAME_H=720, HEADER_H=56, SIDE_W=260, MARGIN=16, LOG_H=140;
-  function computeArenaRect(){
-    const leftBlock  = MARGIN + SIDE_W + MARGIN;
-    const rightBlock = MARGIN + SIDE_W + MARGIN;
-    const topBlock   = HEADER_H + MARGIN;
-    const bottomBlock= MARGIN + LOG_H + MARGIN;
-    const w = GAME_W - (leftBlock + rightBlock);
-    const h = GAME_H - (topBlock + bottomBlock);
-    const x = leftBlock + w/2;
-    const y = topBlock + h/2;
-    return { x, y, w, h, top:topBlock, left:leftBlock };
-  }
-
   // ----- UI helpers -----
   function populateCharacterSelects(){
     const p1sel = document.getElementById('p1char');
@@ -101,6 +87,8 @@
     document.getElementById(id)?.classList.add('active');
 
     const center = document.getElementById('center-ui');
+    const panelL = document.getElementById('ui-left');
+    const panelR = document.getElementById('ui-right');
     const views = {
       sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
       story: document.getElementById('center-story'),
@@ -112,9 +100,13 @@
 
     if (id === 'tab-sim'){
       center.style.display = 'none';
+      panelL.style.display = 'block';
+      panelR.style.display = 'block';
       window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
     } else {
       center.style.display = 'block';
+      panelL.style.display = 'none';
+      panelR.style.display = 'none';
       let mode = 'story';
       if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
       if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
@@ -167,16 +159,6 @@
     document.getElementById('tab-char')?.addEventListener('click', ()=>setActiveTab('tab-char'));
     document.getElementById('tab-skill')?.addEventListener('click', ()=>setActiveTab('tab-skill'));
     document.getElementById('tab-ai')?.addEventListener('click', ()=>setActiveTab('tab-ai'));
-  }
-
-  // ----- Center-UI Position exakt über Arena setzen -----
-  function placeCenterUI(){
-    const A = computeArenaRect();
-    const ct = document.getElementById('center-ui');
-    ct.style.left   = `${A.left}px`;
-    ct.style.top    = `${A.top}px`;
-    ct.style.width  = `${A.w}px`;
-    ct.style.height = `${A.h}px`;
   }
 
   // ----- Char Creator: State & Live-Preview -----
@@ -352,7 +334,6 @@
     bindHeader();
     setupSkillButtons();
     bindCharCreatorCenter();
-    placeCenterUI();
 
     // Start Game
     new Phaser.Game(config);

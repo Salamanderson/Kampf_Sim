@@ -50,19 +50,11 @@
     .skill-btn { border:1px solid #2b2b36; border-radius:10px; padding:8px; background:#14141c; color:#eaeaf0; cursor:pointer; text-align:center; font-size:12px; user-select:none; }
     .skill-btn.active { box-shadow: 0 0 12px #66d1ff; border-color:#66d1ff; }
 
-    /* Zentrales Overlay (Editoren) – deckt die Arena-Fläche ab */
-    #center-ui {
-      position:absolute; z-index:25; /* über Canvas, unter Header/Panels */
-      /* Position/Größe werden von main.js exakt gesetzt, damit es mit der Arena deckungsgleich ist */
-      background: rgba(10,10,16,.6);
-      border: 1px solid #2b2b36;
-      border-radius: 10px;
-      overflow: auto;
-      display: none; /* hidden by default */
-    }
-    .center-view { display:none; padding:12px; }
+    /* Editor-Sidepanel */
+    #center-ui { right:16px; display:none; }
+    .center-view { display:none; }
     .center-view.active { display:block; }
-    .center-grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .center-grid { display:flex; flex-direction:column; gap:12px; }
     .section { border:1px solid #2b2b36; border-radius:10px; padding:10px; background:rgba(20,20,30,.65); }
     .section h3 { margin:0 0 8px 0; font-size:14px; color:#9cc9ff; }
     .row-inline { display:flex; gap:8px; align-items:center; }
@@ -140,8 +132,8 @@
     </div>
   </div>
 
-  <!-- ZENTRALE OVERLAY-FLÄCHE FÜR EDITOREN (deckt Arena) -->
-  <div id="center-ui">
+  <!-- Seitenpanel für Editoren -->
+  <div id="center-ui" class="panel">
     <!-- Char Creator -->
     <div id="center-char" class="center-view">
       <div class="center-grid">
