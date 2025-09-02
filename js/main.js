@@ -86,34 +86,24 @@
     document.querySelectorAll('#ui-header .tab').forEach(b=>b.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
 
-    const center = document.getElementById('center-ui');
-    const panelL = document.getElementById('ui-left');
-    const panelR = document.getElementById('ui-right');
-    const views = {
-      sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
-      story: document.getElementById('center-story'),
-      char: document.getElementById('center-char'),
-      skill: document.getElementById('center-skill'),
-      ai: document.getElementById('center-ai')
-    };
-    Object.values(views).forEach(v=>v && v.classList.remove('active'));
+    const modeKey = {
+      'tab-sim':'sim',
+      'tab-story':'story',
+      'tab-char':'char',
+      'tab-skill':'skill',
+      'tab-ai':'ai'
+    }[id] || 'story';
 
-    if (id === 'tab-sim'){
-      center.style.display = 'none';
-      panelL.style.display = 'block';
-      panelR.style.display = 'block';
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
-    } else {
-      center.style.display = 'block';
-      panelL.style.display = 'none';
-      panelR.style.display = 'none';
-      let mode = 'story';
-      if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
-      if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
-      if (id==='tab-ai')   { mode='ai_creator';    views.ai.classList.add('active'); }
-      if (id==='tab-story'){ mode='story';         views.story.classList.add('active'); }
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
-    }
+    document.querySelectorAll('.panel-view').forEach(v=>v.style.display='none');
+    document.querySelectorAll('.panel-'+modeKey).forEach(v=>v.style.display='block');
+
+    let mode = 'story';
+    if (modeKey==='sim') mode = 'simulator';
+    if (modeKey==='char'){ mode = 'char_creator'; startCharCreatorPreviewFromSelection(); }
+    if (modeKey==='skill') mode = 'skill_creator';
+    if (modeKey==='ai') mode = 'ai_creator';
+
+    window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
   }
 
   function flashSkill(side, skill){
