@@ -86,34 +86,51 @@
     document.querySelectorAll('#ui-header .tab').forEach(b=>b.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
 
-    const center = document.getElementById('center-ui');
-    const panelL = document.getElementById('ui-left');
-    const panelR = document.getElementById('ui-right');
-    const views = {
-      sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
-      story: document.getElementById('center-story'),
-      char: document.getElementById('center-char'),
-      skill: document.getElementById('center-skill'),
-      ai: document.getElementById('center-ai')
+    const leftViews = {
+      sim: document.getElementById('panel-left-sim'),
+      story: document.getElementById('panel-left-story'),
+      char: document.getElementById('panel-left-char'),
+      skill: document.getElementById('panel-left-skill'),
+      ai: document.getElementById('panel-left-ai')
     };
-    Object.values(views).forEach(v=>v && v.classList.remove('active'));
+    const rightViews = {
+      sim: document.getElementById('panel-right-sim'),
+      story: document.getElementById('panel-right-story'),
+      char: document.getElementById('panel-right-char'),
+      skill: document.getElementById('panel-right-skill'),
+      ai: document.getElementById('panel-right-ai')
+    };
+    Object.values(leftViews).forEach(v=>v && (v.style.display='none'));
+    Object.values(rightViews).forEach(v=>v && (v.style.display='none'));
 
-    if (id === 'tab-sim'){
-      center.style.display = 'none';
-      panelL.style.display = 'block';
-      panelR.style.display = 'block';
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
-    } else {
-      center.style.display = 'block';
-      panelL.style.display = 'none';
-      panelR.style.display = 'none';
-      let mode = 'story';
-      if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
-      if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
-      if (id==='tab-ai')   { mode='ai_creator';    views.ai.classList.add('active'); }
-      if (id==='tab-story'){ mode='story';         views.story.classList.add('active'); }
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
+    let mode = 'simulator';
+    switch(id){
+      case 'tab-story':
+        mode = 'story';
+        leftViews.story.style.display = 'block';
+        rightViews.story.style.display = 'block';
+        break;
+      case 'tab-char':
+        mode = 'char_creator';
+        leftViews.char.style.display = 'block';
+        rightViews.char.style.display = 'block';
+        startCharCreatorPreviewFromSelection();
+        break;
+      case 'tab-skill':
+        mode = 'skill_creator';
+        leftViews.skill.style.display = 'block';
+        rightViews.skill.style.display = 'block';
+        break;
+      case 'tab-ai':
+        mode = 'ai_creator';
+        leftViews.ai.style.display = 'block';
+        rightViews.ai.style.display = 'block';
+        break;
+      default:
+        leftViews.sim.style.display = 'block';
+        rightViews.sim.style.display = 'block';
     }
+    window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
   }
 
   function flashSkill(side, skill){
