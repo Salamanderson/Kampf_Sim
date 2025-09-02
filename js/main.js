@@ -51,11 +51,13 @@
   }
 
   // ----- Phaser Config -----
+  const GAME_W = window.innerWidth - 584;
+  const GAME_H = window.innerHeight - 72;
   const config = {
     type: Phaser.AUTO,
     backgroundColor: '#0f0f16',
     parent: 'game-root',
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 1280, height: 720 },
+    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: GAME_W, height: GAME_H },
     fps: { target: 60, forceSetTimeOut: true },
     scene: [ Scenes.BootScene, Scenes.PreloadScene, Scenes.FightScene ]
   };
@@ -86,34 +88,44 @@
     document.querySelectorAll('#ui-header .tab').forEach(b=>b.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
 
-    const center = document.getElementById('center-ui');
-    const panelL = document.getElementById('ui-left');
-    const panelR = document.getElementById('ui-right');
-    const views = {
-      sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
-      story: document.getElementById('center-story'),
-      char: document.getElementById('center-char'),
-      skill: document.getElementById('center-skill'),
-      ai: document.getElementById('center-ai')
-    };
-    Object.values(views).forEach(v=>v && v.classList.remove('active'));
+    const modes = ['sim','story','char','skill','ai'];
+    modes.forEach(m=>{
+      document.getElementById(`view-${m}-left`)?.classList.remove('active');
+      document.getElementById(`view-${m}-right`)?.classList.remove('active');
+      document.getElementById(`center-${m}`)?.classList.remove('active');
+    });
 
-    if (id === 'tab-sim'){
-      center.style.display = 'none';
-      panelL.style.display = 'block';
-      panelR.style.display = 'block';
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
-    } else {
-      center.style.display = 'block';
-      panelL.style.display = 'none';
-      panelR.style.display = 'none';
-      let mode = 'story';
-      if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
-      if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
-      if (id==='tab-ai')   { mode='ai_creator';    views.ai.classList.add('active'); }
-      if (id==='tab-story'){ mode='story';         views.story.classList.add('active'); }
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
+    let mode = 'simulator';
+    if (id==='tab-sim'){
+      mode='simulator';
+      document.getElementById('view-sim-left')?.classList.add('active');
+      document.getElementById('view-sim-right')?.classList.add('active');
     }
+    if (id==='tab-story'){
+      mode='story';
+      document.getElementById('view-story-left')?.classList.add('active');
+      document.getElementById('view-story-right')?.classList.add('active');
+      document.getElementById('center-story')?.classList.add('active');
+    }
+    if (id==='tab-char'){
+      mode='char_creator';
+      document.getElementById('view-char-left')?.classList.add('active');
+      document.getElementById('view-char-right')?.classList.add('active');
+      startCharCreatorPreviewFromSelection();
+    }
+    if (id==='tab-skill'){
+      mode='skill_creator';
+      document.getElementById('view-skill-left')?.classList.add('active');
+      document.getElementById('view-skill-right')?.classList.add('active');
+      document.getElementById('center-skill')?.classList.add('active');
+    }
+    if (id==='tab-ai'){
+      mode='ai_creator';
+      document.getElementById('view-ai-left')?.classList.add('active');
+      document.getElementById('view-ai-right')?.classList.add('active');
+      document.getElementById('center-ai')?.classList.add('active');
+    }
+    window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
   }
 
   function flashSkill(side, skill){
@@ -136,6 +148,22 @@
     window.addEventListener('VC_PANEL_FLASH', (ev)=>{
       const d = ev.detail||{}; flashSkill(d.side, d.skill);
     });
+  }
+
+  function makeDraggable(el){
+    let down=false,offX=0,offY=0;
+    el.addEventListener('mousedown',e=>{ down=true; offX=e.clientX-el.offsetLeft; offY=e.clientY-el.offsetTop; });
+    window.addEventListener('mouseup',()=>down=false);
+    window.addEventListener('mousemove',e=>{ if(down){ el.style.left=(e.clientX-offX)+'px'; el.style.top=(e.clientY-offY)+'px'; }});
+  }
+
+  function setupDebugWindow(){
+    const dbg = document.getElementById('debug-window');
+    const chk = document.getElementById('toggle-debug');
+    const update = ()=>{ dbg.style.display = chk.checked ? 'block' : 'none'; };
+    chk?.addEventListener('change', update);
+    update();
+    makeDraggable(dbg);
   }
 
   function bindHeader(){
@@ -334,6 +362,7 @@
     bindHeader();
     setupSkillButtons();
     bindCharCreatorCenter();
+    setupDebugWindow();
 
     // Start Game
     new Phaser.Game(config);
