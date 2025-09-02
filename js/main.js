@@ -82,39 +82,39 @@
     if (ccLoad && chars[0]) ccLoad.value = chars[0].id;
   }
 
-  function setActiveTab(id){
-    document.querySelectorAll('#ui-header .tab').forEach(b=>b.classList.remove('active'));
-    document.getElementById(id)?.classList.add('active');
+    function setActiveTab(id){
+      document.querySelectorAll('#ui-header .tab').forEach(b=>b.classList.remove('active'));
+      document.getElementById(id)?.classList.add('active');
 
-    const center = document.getElementById('center-ui');
-    const panelL = document.getElementById('ui-left');
-    const panelR = document.getElementById('ui-right');
-    const views = {
-      sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
-      story: document.getElementById('center-story'),
-      char: document.getElementById('center-char'),
-      skill: document.getElementById('center-skill'),
-      ai: document.getElementById('center-ai')
-    };
-    Object.values(views).forEach(v=>v && v.classList.remove('active'));
+      // alle Panel-Inhalte verbergen
+      document.querySelectorAll('#ui-left > div').forEach(d=>d.style.display='none');
+      document.querySelectorAll('#ui-right > div').forEach(d=>d.style.display='none');
 
-    if (id === 'tab-sim'){
-      center.style.display = 'none';
-      panelL.style.display = 'block';
-      panelR.style.display = 'block';
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
-    } else {
-      center.style.display = 'block';
-      panelL.style.display = 'none';
-      panelR.style.display = 'none';
-      let mode = 'story';
-      if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
-      if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
-      if (id==='tab-ai')   { mode='ai_creator';    views.ai.classList.add('active'); }
-      if (id==='tab-story'){ mode='story';         views.story.classList.add('active'); }
+      let mode = 'simulator';
+      if (id === 'tab-sim'){
+        document.getElementById('panel-sim-left').style.display='block';
+        document.getElementById('panel-sim-right').style.display='block';
+        mode = 'simulator';
+      } else if (id === 'tab-char'){
+        document.getElementById('panel-char-left').style.display='block';
+        document.getElementById('panel-char-right').style.display='block';
+        startCharCreatorPreviewFromSelection();
+        mode = 'char_creator';
+      } else if (id === 'tab-story'){
+        document.getElementById('panel-story-left').style.display='block';
+        document.getElementById('panel-story-right').style.display='block';
+        mode = 'story';
+      } else if (id === 'tab-skill'){
+        document.getElementById('panel-skill-left').style.display='block';
+        document.getElementById('panel-skill-right').style.display='block';
+        mode = 'skill_creator';
+      } else if (id === 'tab-ai'){
+        document.getElementById('panel-ai-left').style.display='block';
+        document.getElementById('panel-ai-right').style.display='block';
+        mode = 'ai_creator';
+      }
       window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
     }
-  }
 
   function flashSkill(side, skill){
     const id = `${side.toLowerCase()}-skill-${skill}`;
@@ -159,6 +159,22 @@
     document.getElementById('tab-char')?.addEventListener('click', ()=>setActiveTab('tab-char'));
     document.getElementById('tab-skill')?.addEventListener('click', ()=>setActiveTab('tab-skill'));
     document.getElementById('tab-ai')?.addEventListener('click', ()=>setActiveTab('tab-ai'));
+  }
+
+  function initHUDWindow(){
+    const win = document.getElementById('hud-window');
+    const title = document.getElementById('hud-title');
+    if (!win || !title) return;
+    let dragging = false, offX = 0, offY = 0;
+    title.addEventListener('mousedown', e=>{
+      dragging = true;
+      offX = e.clientX - win.offsetLeft;
+      offY = e.clientY - win.offsetTop;
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
+    function move(e){ if (!dragging) return; win.style.left = (e.clientX - offX) + 'px'; win.style.top = (e.clientY - offY) + 'px'; }
+    function up(){ dragging=false; document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); }
   }
 
   // ----- Char Creator: State & Live-Preview -----
@@ -229,7 +245,7 @@
     emitCCUpdate();
   }
 
-  function bindCharCreatorCenter(){
+    function bindCharCreatorUI(){
     // Eingaben -> Realtime Preview
     ['cc-name','cc-shape','cc-color','cc-radius','cc-maxhp','cc-maxen','cc-accel','cc-speed','cc-dash','cc-fric',
      'cc-skill-light','cc-skill-heavy','cc-skill-spin','cc-skill-heal'
@@ -333,7 +349,8 @@
     populateCharacterSelects();
     bindHeader();
     setupSkillButtons();
-    bindCharCreatorCenter();
+    bindCharCreatorUI();
+      initHUDWindow();
 
     // Start Game
     new Phaser.Game(config);

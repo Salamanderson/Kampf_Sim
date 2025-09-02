@@ -25,7 +25,7 @@
     Extends: Phaser.Scene,
     initialize: function FightScene(){
       Phaser.Scene.call(this, { key: 'FightScene' });
-      this._uiOpts = { showHit:false, showDebug:true, useBrython:true, p1:'aggressive', p2:'defensive', p1CharId:null, p2CharId:null };
+        this._uiOpts = { showHit:false, showDebug:false, useBrython:true, p1:'aggressive', p2:'defensive', p1CharId:null, p2CharId:null };
       this._mode = 'simulator'; // simulator | story | char_creator | skill_creator | ai_creator
       this._paused = false;
       this._ccPreview = null;
@@ -45,8 +45,9 @@
       this._logBuffer = [];
       this._drawLogFrame();
 
-      // HUD
-      this._hud = this.add.text(16, this.scale.height-18, '', { fontSize:12, color:'#b9c2ff' }).setOrigin(0,1).setDepth(1000);
+        // HUD (DOM)
+        this._hudEl = document.getElementById('hud-content');
+        this._hudWin = document.getElementById('hud-window');
 
       // Systeme
       this.hitboxes = new HitboxSystem(this);
@@ -226,14 +227,19 @@
       this._renderHUD();
     },
 
-    _renderHUD: function(){
-      if (!this._uiOpts.showDebug){ this._hud.setText(''); return; }
-      const fps = this.game.loop.actualFps|0;
-      const a = this.fighters[0], b = this.fighters[1];
-      const s1 = a? `${a.id} HP:${a.hp|0}/${a.maxHp} EN:${a.en|0} ${a.state}${a.moveName?`(${a.moveName}:${a.moveFrame})`:''}` : '';
-      const s2 = b? `${b.id} HP:${b.hp|0}/${b.maxHp} EN:${b.en|0} ${b.state}${b.moveName?`(${b.moveName}:${b.moveFrame})`:''}` : '';
-      this._hud.setText(`FPS:${fps}  Mode:${this._mode}  BrythonReady:${window.GameBridge.isBrythonReady()}  Hitstop:${this.feel.hitstopFrames}\n${s1}\n${s2}`);
-    },
+      _renderHUD: function(){
+        if (!this._uiOpts.showDebug){
+          if (this._hudWin) this._hudWin.style.display = 'none';
+          if (this._hudEl) this._hudEl.textContent = '';
+          return;
+        }
+        if (this._hudWin) this._hudWin.style.display = 'block';
+        const fps = this.game.loop.actualFps|0;
+        const a = this.fighters[0], b = this.fighters[1];
+        const s1 = a? `${a.id} HP:${a.hp|0}/${a.maxHp} EN:${a.en|0} ${a.state}${a.moveName?`(${a.moveName}:${a.moveFrame})`:''}` : '';
+        const s2 = b? `${b.id} HP:${b.hp|0}/${b.maxHp} EN:${b.en|0} ${b.state}${b.moveName?`(${b.moveName}:${b.moveFrame})`:''}` : '';
+        if (this._hudEl) this._hudEl.textContent = `FPS:${fps}  Mode:${this._mode}  BrythonReady:${window.GameBridge.isBrythonReady()}  Hitstop:${this.feel.hitstopFrames}\n${s1}\n${s2}`;
+      },
 
     _onSkillUsed: function({fighter, move}){
       const side = fighter.teamId===1?'P1':'P2';
