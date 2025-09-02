@@ -86,34 +86,50 @@
     document.querySelectorAll('#ui-header .tab').forEach(b=>b.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
 
-    const center = document.getElementById('center-ui');
-    const panelL = document.getElementById('ui-left');
-    const panelR = document.getElementById('ui-right');
-    const views = {
-      sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
-      story: document.getElementById('center-story'),
-      char: document.getElementById('center-char'),
-      skill: document.getElementById('center-skill'),
-      ai: document.getElementById('center-ai')
+    const LViews = {
+      sim: document.getElementById('left-sim'),
+      char: document.getElementById('left-char'),
+      story: document.getElementById('left-story'),
+      skill: document.getElementById('left-skill'),
+      ai: document.getElementById('left-ai')
     };
-    Object.values(views).forEach(v=>v && v.classList.remove('active'));
+    const RViews = {
+      sim: document.getElementById('right-sim'),
+      char: document.getElementById('right-char'),
+      story: document.getElementById('right-story'),
+      skill: document.getElementById('right-skill'),
+      ai: document.getElementById('right-ai')
+    };
+    Object.values(LViews).forEach(v=>v && (v.style.display='none'));
+    Object.values(RViews).forEach(v=>v && (v.style.display='none'));
 
+    let mode = 'simulator';
     if (id === 'tab-sim'){
-      center.style.display = 'none';
-      panelL.style.display = 'block';
-      panelR.style.display = 'block';
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
-    } else {
-      center.style.display = 'block';
-      panelL.style.display = 'none';
-      panelR.style.display = 'none';
-      let mode = 'story';
-      if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
-      if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
-      if (id==='tab-ai')   { mode='ai_creator';    views.ai.classList.add('active'); }
-      if (id==='tab-story'){ mode='story';         views.story.classList.add('active'); }
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
+      LViews.sim.style.display = 'block';
+      RViews.sim.style.display = 'block';
     }
+    if (id === 'tab-char'){
+      mode = 'char_creator';
+      LViews.char.style.display = 'block';
+      RViews.char.style.display = 'block';
+      startCharCreatorPreviewFromSelection();
+    }
+    if (id === 'tab-story'){
+      mode = 'story';
+      LViews.story.style.display = 'block';
+      RViews.story.style.display = 'block';
+    }
+    if (id === 'tab-skill'){
+      mode = 'skill_creator';
+      LViews.skill.style.display = 'block';
+      RViews.skill.style.display = 'block';
+    }
+    if (id === 'tab-ai'){
+      mode = 'ai_creator';
+      LViews.ai.style.display = 'block';
+      RViews.ai.style.display = 'block';
+    }
+    window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
   }
 
   function flashSkill(side, skill){
