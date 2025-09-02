@@ -13,7 +13,20 @@
 
   <style>
     html, body { margin:0; padding:0; background:#0e0e12; color:#eaeaf0; font-family:system-ui,Segoe UI,Roboto,Inter,Arial,Helvetica,sans-serif; height:100%; overflow:hidden; }
-    #game-root { width:100vw; height:100vh; display:grid; place-items:center; }
+    :root {
+      --panel-width:260px;
+      --panel-gap:16px;
+    }
+
+    #game-root {
+      position:absolute;
+      top:56px;
+      bottom:16px;
+      left:calc(var(--panel-gap)*2 + var(--panel-width));
+      right:calc(var(--panel-gap)*2 + var(--panel-width));
+      display:grid;
+      place-items:center;
+    }
 
     /* Top-Leiste */
     #ui-header {
@@ -34,7 +47,7 @@
 
     /* Seitenpanels */
     .panel {
-      position:absolute; top:56px; bottom:16px; width:260px; padding:12px; border-radius:12px; z-index:20;
+      position:absolute; top:56px; bottom:16px; width:var(--panel-width); padding:12px; border-radius:12px; z-index:20;
       background:rgba(18,18,28,.78); border:2px solid #1fb6ff; box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
       overflow:auto;
     }
@@ -93,109 +106,110 @@
 
   <!-- SEITENPANELS -->
   <div id="ui-left" class="panel">
-    <h2>Panel 1 • Spieler 1 (KI)</h2>
-    <div class="row"><label for="p1char">Charakter</label><select id="p1char"></select></div>
-    <div class="row"><label for="p1ai">Profil</label>
-      <select id="p1ai">
-        <option value="aggressive">aggressiv</option>
-        <option value="defensive">defensiv</option>
-        <option value="random">random</option>
-      </select>
+    <div id="left-sim">
+      <h2>Panel 1 • Spieler 1 (KI)</h2>
+      <div class="row"><label for="p1char">Charakter</label><select id="p1char"></select></div>
+      <div class="row"><label for="p1ai">Profil</label>
+        <select id="p1ai">
+          <option value="aggressive">aggressiv</option>
+          <option value="defensive">defensiv</option>
+          <option value="random">random</option>
+        </select>
+      </div>
+      <div class="row"><label>Skills</label>
+        <div class="skills-grid">
+          <div id="p1-skill-light"  class="skill-btn" data-side="P1" data-skill="light">Light</div>
+          <div id="p1-skill-heavy"  class="skill-btn" data-side="P1" data-skill="heavy">Heavy</div>
+          <div id="p1-skill-spin"   class="skill-btn" data-side="P1" data-skill="spin">Spin</div>
+          <div id="p1-skill-heal"   class="skill-btn" data-side="P1" data-skill="heal">Heal</div>
+        </div>
+      </div>
     </div>
-    <div class="row"><label>Skills</label>
-      <div class="skills-grid">
-        <div id="p1-skill-light"  class="skill-btn" data-side="P1" data-skill="light">Light</div>
-        <div id="p1-skill-heavy"  class="skill-btn" data-side="P1" data-skill="heavy">Heavy</div>
-        <div id="p1-skill-spin"   class="skill-btn" data-side="P1" data-skill="spin">Spin</div>
-        <div id="p1-skill-heal"   class="skill-btn" data-side="P1" data-skill="heal">Heal</div>
+    <div id="left-char" style="display:none;">
+      <h2>Charakter Creator</h2>
+      <div class="section">
+        <h3>Charakter wählen / laden</h3>
+        <div class="row"><label>Vorlage</label><select id="cc-load"></select></div>
+        <div class="row-inline">
+          <button id="cc-new">Neu</button>
+          <button id="cc-duplicate">Duplizieren</button>
+          <button id="cc-delete">Löschen</button>
+        </div>
+      </div>
+      <div class="section">
+        <h3>Aktionen</h3>
+        <div class="row-inline">
+          <button id="cc-save">Speichern</button>
+          <button id="cc-use-p1">Als P1 nutzen</button>
+          <button id="cc-use-p2">Als P2 nutzen</button>
+          <button id="cc-export">Export JSON</button>
+        </div>
+        <small>Speichern legt/aktualisiert den Charakter in der Datenbank (auch localStorage). „Nutzen“ startet sofort ein Match.</small>
       </div>
     </div>
   </div>
 
   <div id="ui-right" class="panel">
-    <h2>Panel 2 • Spieler 2 (KI)</h2>
-    <div class="row"><label for="p2char">Charakter</label><select id="p2char"></select></div>
-    <div class="row"><label for="p2ai">Profil</label>
-      <select id="p2ai">
-        <option value="defensive">defensiv</option>
-        <option value="aggressive">aggressiv</option>
-        <option value="random">random</option>
-      </select>
+    <div id="right-sim">
+      <h2>Panel 2 • Spieler 2 (KI)</h2>
+      <div class="row"><label for="p2char">Charakter</label><select id="p2char"></select></div>
+      <div class="row"><label for="p2ai">Profil</label>
+        <select id="p2ai">
+          <option value="defensive">defensiv</option>
+          <option value="aggressive">aggressiv</option>
+          <option value="random">random</option>
+        </select>
+      </div>
+      <div class="row"><label>Skills</label>
+        <div class="skills-grid">
+          <div id="p2-skill-light"  class="skill-btn" data-side="P2" data-skill="light">Light</div>
+          <div id="p2-skill-heavy"  class="skill-btn" data-side="P2" data-skill="heavy">Heavy</div>
+          <div id="p2-skill-spin"   class="skill-btn" data-side="P2" data-skill="spin">Spin</div>
+          <div id="p2-skill-heal"   class="skill-btn" data-side="P2" data-skill="heal">Heal</div>
+        </div>
+      </div>
     </div>
-    <div class="row"><label>Skills</label>
-      <div class="skills-grid">
-        <div id="p2-skill-light"  class="skill-btn" data-side="P2" data-skill="light">Light</div>
-        <div id="p2-skill-heavy"  class="skill-btn" data-side="P2" data-skill="heavy">Heavy</div>
-        <div id="p2-skill-spin"   class="skill-btn" data-side="P2" data-skill="spin">Spin</div>
-        <div id="p2-skill-heal"   class="skill-btn" data-side="P2" data-skill="heal">Heal</div>
+    <div id="right-char" style="display:none;">
+      <h2>Charakter Editor</h2>
+      <div class="section">
+        <h3>Basisdaten</h3>
+        <div class="row"><label>Name</label><input id="cc-name" type="text" placeholder="z. B. Nova"/></div>
+        <div class="row-inline" style="width:100%;">
+          <div style="flex:1">
+            <label>Form</label>
+            <select id="cc-shape"><option value="circle">Kreis</option><option value="square">Quadrat</option><option value="triangle">Dreieck</option></select>
+          </div>
+          <div style="width:120px">
+            <label>Farbe</label><input id="cc-color" type="color" value="#64c8ff"/>
+          </div>
+        </div>
+        <div class="row"><label>Radius</label><input id="cc-radius" type="range" min="14" max="36" value="22"/></div>
+      </div>
+
+      <div class="section">
+        <h3>Stats</h3>
+        <div class="row-inline"><label style="width:100px">HP</label><input id="cc-maxhp" type="number" value="120"/></div>
+        <div class="row-inline"><label style="width:100px">EN</label><input id="cc-maxen" type="number" value="100"/></div>
+        <div class="row-inline"><label style="width:100px">Accel</label><input id="cc-accel" type="number" value="1800"/></div>
+        <div class="row-inline"><label style="width:100px">Speed</label><input id="cc-speed" type="number" value="240"/></div>
+        <div class="row-inline"><label style="width:100px">Dash</label><input id="cc-dash" type="number" value="560"/></div>
+        <div class="row-inline"><label style="width:100px">Friction</label><input id="cc-fric" type="number" step="0.01" value="0.86"/></div>
+      </div>
+
+      <div class="section" style="grid-column: 1 / span 2;">
+        <h3>Skill-Loadout</h3>
+        <div class="row-inline" style="flex-wrap:wrap">
+          <label style="width:auto"><input type="checkbox" id="cc-skill-light" checked/> Light</label>
+          <label style="width:auto"><input type="checkbox" id="cc-skill-heavy" checked/> Heavy</label>
+          <label style="width:auto"><input type="checkbox" id="cc-skill-spin"  checked/> Spin</label>
+          <label style="width:auto"><input type="checkbox" id="cc-skill-heal"  checked/> Heal</label>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Seitenpanel für Editoren -->
   <div id="center-ui" class="panel">
-    <!-- Char Creator -->
-    <div id="center-char" class="center-view">
-      <div class="center-grid">
-        <div class="section">
-          <h3>Charakter wählen / laden</h3>
-          <div class="row"><label>Vorlage</label><select id="cc-load"></select></div>
-          <div class="row-inline">
-            <button id="cc-new">Neu</button>
-            <button id="cc-duplicate">Duplizieren</button>
-            <button id="cc-delete">Löschen</button>
-          </div>
-        </div>
-        <div class="section">
-          <h3>Aktionen</h3>
-          <div class="row-inline">
-            <button id="cc-save">Speichern</button>
-            <button id="cc-use-p1">Als P1 nutzen</button>
-            <button id="cc-use-p2">Als P2 nutzen</button>
-            <button id="cc-export">Export JSON</button>
-          </div>
-          <small>Speichern legt/aktualisiert den Charakter in der Datenbank (auch localStorage). „Nutzen“ startet sofort ein Match.</small>
-        </div>
-      </div>
-
-      <div class="center-grid" style="margin-top:12px;">
-        <div class="section">
-          <h3>Basisdaten</h3>
-          <div class="row"><label>Name</label><input id="cc-name" type="text" placeholder="z. B. Nova"/></div>
-          <div class="row-inline" style="width:100%;">
-            <div style="flex:1">
-              <label>Form</label>
-              <select id="cc-shape"><option value="circle">Kreis</option><option value="square">Quadrat</option><option value="triangle">Dreieck</option></select>
-            </div>
-            <div style="width:120px">
-              <label>Farbe</label><input id="cc-color" type="color" value="#64c8ff"/>
-            </div>
-          </div>
-          <div class="row"><label>Radius</label><input id="cc-radius" type="range" min="14" max="36" value="22"/></div>
-        </div>
-
-        <div class="section">
-          <h3>Stats</h3>
-          <div class="row-inline"><label style="width:100px">HP</label><input id="cc-maxhp" type="number" value="120"/></div>
-          <div class="row-inline"><label style="width:100px">EN</label><input id="cc-maxen" type="number" value="100"/></div>
-          <div class="row-inline"><label style="width:100px">Accel</label><input id="cc-accel" type="number" value="1800"/></div>
-          <div class="row-inline"><label style="width:100px">Speed</label><input id="cc-speed" type="number" value="240"/></div>
-          <div class="row-inline"><label style="width:100px">Dash</label><input id="cc-dash" type="number" value="560"/></div>
-          <div class="row-inline"><label style="width:100px">Friction</label><input id="cc-fric" type="number" step="0.01" value="0.86"/></div>
-        </div>
-
-        <div class="section" style="grid-column: 1 / span 2;">
-          <h3>Skill-Loadout</h3>
-          <div class="row-inline" style="flex-wrap:wrap">
-            <label style="width:auto"><input type="checkbox" id="cc-skill-light" checked/> Light</label>
-            <label style="width:auto"><input type="checkbox" id="cc-skill-heavy" checked/> Heavy</label>
-            <label style="width:auto"><input type="checkbox" id="cc-skill-spin"  checked/> Spin</label>
-            <label style="width:auto"><input type="checkbox" id="cc-skill-heal"  checked/> Heal</label>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Platzhalter-Ansichten -->
     <div id="center-story" class="center-view"><div class="section"><h3>Story</h3><p>Platzhalter.</p></div></div>
     <div id="center-skill" class="center-view"><div class="section"><h3>Skill Creator</h3><p>Platzhalter.</p></div></div>

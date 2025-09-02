@@ -89,30 +89,44 @@
     const center = document.getElementById('center-ui');
     const panelL = document.getElementById('ui-left');
     const panelR = document.getElementById('ui-right');
+    const leftSim = document.getElementById('left-sim');
+    const leftChar = document.getElementById('left-char');
+    const rightSim = document.getElementById('right-sim');
+    const rightChar = document.getElementById('right-char');
     const views = {
-      sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
       story: document.getElementById('center-story'),
-      char: document.getElementById('center-char'),
       skill: document.getElementById('center-skill'),
       ai: document.getElementById('center-ai')
     };
     Object.values(views).forEach(v=>v && v.classList.remove('active'));
 
-    if (id === 'tab-sim'){
+    panelL.style.display = 'block';
+    panelR.style.display = 'block';
+
+    if (id === 'tab-char'){
       center.style.display = 'none';
-      panelL.style.display = 'block';
-      panelR.style.display = 'block';
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
+      leftSim.style.display = 'none';
+      rightSim.style.display = 'none';
+      leftChar.style.display = 'block';
+      rightChar.style.display = 'block';
+      startCharCreatorPreviewFromSelection();
+      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'char_creator' }}));
     } else {
-      center.style.display = 'block';
-      panelL.style.display = 'none';
-      panelR.style.display = 'none';
-      let mode = 'story';
-      if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
-      if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
-      if (id==='tab-ai')   { mode='ai_creator';    views.ai.classList.add('active'); }
-      if (id==='tab-story'){ mode='story';         views.story.classList.add('active'); }
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
+      leftChar.style.display = 'none';
+      rightChar.style.display = 'none';
+      leftSim.style.display = 'block';
+      rightSim.style.display = 'block';
+      if (id === 'tab-sim'){
+        center.style.display = 'none';
+        window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
+      } else {
+        center.style.display = 'block';
+        let mode = 'story';
+        if (id==='tab-story'){ views.story.classList.add('active'); mode='story'; }
+        if (id==='tab-skill'){ views.skill.classList.add('active'); mode='skill_creator'; }
+        if (id==='tab-ai')   { views.ai.classList.add('active');   mode='ai_creator'; }
+        window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
+      }
     }
   }
 
