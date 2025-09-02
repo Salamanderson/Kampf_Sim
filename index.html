@@ -93,21 +93,47 @@
 
   <!-- SEITENPANELS -->
   <div id="ui-left" class="panel">
-    <h2>Panel 1 • Spieler 1 (KI)</h2>
-    <div class="row"><label for="p1char">Charakter</label><select id="p1char"></select></div>
-    <div class="row"><label for="p1ai">Profil</label>
-      <select id="p1ai">
-        <option value="aggressive">aggressiv</option>
-        <option value="defensive">defensiv</option>
-        <option value="random">random</option>
-      </select>
+    <div id="ui-left-sim">
+      <h2>Panel 1 • Spieler 1 (KI)</h2>
+      <div class="row"><label for="p1char">Charakter</label><select id="p1char"></select></div>
+      <div class="row"><label for="p1ai">Profil</label>
+        <select id="p1ai">
+          <option value="aggressive">aggressiv</option>
+          <option value="defensive">defensiv</option>
+          <option value="random">random</option>
+        </select>
+      </div>
+      <div class="row"><label>Skills</label>
+        <div class="skills-grid">
+          <div id="p1-skill-light"  class="skill-btn" data-side="P1" data-skill="light">Light</div>
+          <div id="p1-skill-heavy"  class="skill-btn" data-side="P1" data-skill="heavy">Heavy</div>
+          <div id="p1-skill-spin"   class="skill-btn" data-side="P1" data-skill="spin">Spin</div>
+          <div id="p1-skill-heal"   class="skill-btn" data-side="P1" data-skill="heal">Heal</div>
+        </div>
+      </div>
     </div>
-    <div class="row"><label>Skills</label>
-      <div class="skills-grid">
-        <div id="p1-skill-light"  class="skill-btn" data-side="P1" data-skill="light">Light</div>
-        <div id="p1-skill-heavy"  class="skill-btn" data-side="P1" data-skill="heavy">Heavy</div>
-        <div id="p1-skill-spin"   class="skill-btn" data-side="P1" data-skill="spin">Spin</div>
-        <div id="p1-skill-heal"   class="skill-btn" data-side="P1" data-skill="heal">Heal</div>
+    <div id="ui-left-char" style="display:none;">
+      <h2>Char Creator</h2>
+      <div class="center-grid">
+        <div class="section">
+          <h3>Charakter wählen / laden</h3>
+          <div class="row"><label>Vorlage</label><select id="cc-load"></select></div>
+          <div class="row-inline">
+            <button id="cc-new">Neu</button>
+            <button id="cc-duplicate">Duplizieren</button>
+            <button id="cc-delete">Löschen</button>
+          </div>
+        </div>
+        <div class="section">
+          <h3>Aktionen</h3>
+          <div class="row-inline">
+            <button id="cc-save">Speichern</button>
+            <button id="cc-use-p1">Als P1 nutzen</button>
+            <button id="cc-use-p2">Als P2 nutzen</button>
+            <button id="cc-export">Export JSON</button>
+          </div>
+          <small>Speichern legt/aktualisiert den Charakter in der Datenbank (auch localStorage). „Nutzen“ startet sofort ein Match.</small>
+        </div>
       </div>
     </div>
   </div>
@@ -137,28 +163,6 @@
     <!-- Char Creator -->
     <div id="center-char" class="center-view">
       <div class="center-grid">
-        <div class="section">
-          <h3>Charakter wählen / laden</h3>
-          <div class="row"><label>Vorlage</label><select id="cc-load"></select></div>
-          <div class="row-inline">
-            <button id="cc-new">Neu</button>
-            <button id="cc-duplicate">Duplizieren</button>
-            <button id="cc-delete">Löschen</button>
-          </div>
-        </div>
-        <div class="section">
-          <h3>Aktionen</h3>
-          <div class="row-inline">
-            <button id="cc-save">Speichern</button>
-            <button id="cc-use-p1">Als P1 nutzen</button>
-            <button id="cc-use-p2">Als P2 nutzen</button>
-            <button id="cc-export">Export JSON</button>
-          </div>
-          <small>Speichern legt/aktualisiert den Charakter in der Datenbank (auch localStorage). „Nutzen“ startet sofort ein Match.</small>
-        </div>
-      </div>
-
-      <div class="center-grid" style="margin-top:12px;">
         <div class="section">
           <h3>Basisdaten</h3>
           <div class="row"><label>Name</label><input id="cc-name" type="text" placeholder="z. B. Nova"/></div>
