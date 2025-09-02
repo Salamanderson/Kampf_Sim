@@ -86,34 +86,31 @@
     document.querySelectorAll('#ui-header .tab').forEach(b=>b.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
 
-    const center = document.getElementById('center-ui');
-    const panelL = document.getElementById('ui-left');
-    const panelR = document.getElementById('ui-right');
-    const views = {
-      sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
-      story: document.getElementById('center-story'),
-      char: document.getElementById('center-char'),
-      skill: document.getElementById('center-skill'),
-      ai: document.getElementById('center-ai')
+    const leftViews = {
+      sim: document.getElementById('left-sim'),
+      story: document.getElementById('left-story'),
+      char: document.getElementById('left-char'),
+      skill: document.getElementById('left-skill'),
+      ai: document.getElementById('left-ai')
     };
-    Object.values(views).forEach(v=>v && v.classList.remove('active'));
+    const rightViews = {
+      sim: document.getElementById('right-sim'),
+      story: document.getElementById('right-story'),
+      char: document.getElementById('right-char'),
+      skill: document.getElementById('right-skill'),
+      ai: document.getElementById('right-ai')
+    };
+    Object.values(leftViews).forEach(v=>v && v.classList.remove('active'));
+    Object.values(rightViews).forEach(v=>v && v.classList.remove('active'));
 
-    if (id === 'tab-sim'){
-      center.style.display = 'none';
-      panelL.style.display = 'block';
-      panelR.style.display = 'block';
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
-    } else {
-      center.style.display = 'block';
-      panelL.style.display = 'none';
-      panelR.style.display = 'none';
-      let mode = 'story';
-      if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
-      if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
-      if (id==='tab-ai')   { mode='ai_creator';    views.ai.classList.add('active'); }
-      if (id==='tab-story'){ mode='story';         views.story.classList.add('active'); }
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
-    }
+    let mode = 'simulator';
+    if (id==='tab-story'){ mode='story'; leftViews.story?.classList.add('active'); rightViews.story?.classList.add('active'); }
+    else if (id==='tab-char'){ mode='char_creator'; leftViews.char?.classList.add('active'); rightViews.char?.classList.add('active'); startCharCreatorPreviewFromSelection(); }
+    else if (id==='tab-skill'){ mode='skill_creator'; leftViews.skill?.classList.add('active'); rightViews.skill?.classList.add('active'); }
+    else if (id==='tab-ai'){ mode='ai_creator'; leftViews.ai?.classList.add('active'); rightViews.ai?.classList.add('active'); }
+    else { leftViews.sim?.classList.add('active'); rightViews.sim?.classList.add('active'); }
+
+    window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
   }
 
   function flashSkill(side, skill){
@@ -136,6 +133,18 @@
     window.addEventListener('VC_PANEL_FLASH', (ev)=>{
       const d = ev.detail||{}; flashSkill(d.side, d.skill);
     });
+  }
+
+  function setupDebugWindow(){
+    const dbg = document.getElementById('debug-window');
+    if (!dbg) return;
+    let down=false, offX=0, offY=0;
+    dbg.addEventListener('mousedown', e=>{ down=true; offX=e.offsetX; offY=e.offsetY; });
+    window.addEventListener('mouseup', ()=>{ down=false; });
+    window.addEventListener('mousemove', e=>{ if(!down) return; dbg.style.left=(e.pageX-offX)+'px'; dbg.style.top=(e.pageY-offY)+'px'; });
+    const cb = document.getElementById('toggle-debug');
+    if (cb) dbg.style.display = cb.checked ? 'block' : 'none';
+    cb?.addEventListener('change', ev=>{ dbg.style.display = ev.target.checked ? 'block' : 'none'; });
   }
 
   function bindHeader(){
@@ -229,7 +238,7 @@
     emitCCUpdate();
   }
 
-  function bindCharCreatorCenter(){
+  function bindCharCreator(){
     // Eingaben -> Realtime Preview
     ['cc-name','cc-shape','cc-color','cc-radius','cc-maxhp','cc-maxen','cc-accel','cc-speed','cc-dash','cc-fric',
      'cc-skill-light','cc-skill-heavy','cc-skill-spin','cc-skill-heal'
@@ -333,7 +342,8 @@
     populateCharacterSelects();
     bindHeader();
     setupSkillButtons();
-    bindCharCreatorCenter();
+    setupDebugWindow();
+    bindCharCreator();
 
     // Start Game
     new Phaser.Game(config);
