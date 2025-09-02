@@ -50,10 +50,8 @@
     .skill-btn { border:1px solid #2b2b36; border-radius:10px; padding:8px; background:#14141c; color:#eaeaf0; cursor:pointer; text-align:center; font-size:12px; user-select:none; }
     .skill-btn.active { box-shadow: 0 0 12px #66d1ff; border-color:#66d1ff; }
 
-    /* Editor-Sidepanel */
-    #center-ui { right:16px; display:none; }
-    .center-view { display:none; }
-    .center-view.active { display:block; }
+    .panel-view { display:none; }
+    .panel-view.active { display:block; }
     .center-grid { display:flex; flex-direction:column; gap:12px; }
     .section { border:1px solid #2b2b36; border-radius:10px; padding:10px; background:rgba(20,20,30,.65); }
     .section h3 { margin:0 0 8px 0; font-size:14px; color:#9cc9ff; }
@@ -87,55 +85,34 @@
       <button id="btn-start">Neustart Match</button>
       <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="toggle-ki-brython" checked/> Brython-KI</label>
       <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="toggle-hitboxes"/> Hitboxen</label>
-      <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="toggle-debug" checked/> Debug</label>
+      <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="toggle-debug"/> Debug</label>
     </div>
   </div>
 
   <!-- SEITENPANELS -->
   <div id="ui-left" class="panel">
-    <h2>Panel 1 • Spieler 1 (KI)</h2>
-    <div class="row"><label for="p1char">Charakter</label><select id="p1char"></select></div>
-    <div class="row"><label for="p1ai">Profil</label>
-      <select id="p1ai">
-        <option value="aggressive">aggressiv</option>
-        <option value="defensive">defensiv</option>
-        <option value="random">random</option>
-      </select>
-    </div>
-    <div class="row"><label>Skills</label>
-      <div class="skills-grid">
-        <div id="p1-skill-light"  class="skill-btn" data-side="P1" data-skill="light">Light</div>
-        <div id="p1-skill-heavy"  class="skill-btn" data-side="P1" data-skill="heavy">Heavy</div>
-        <div id="p1-skill-spin"   class="skill-btn" data-side="P1" data-skill="spin">Spin</div>
-        <div id="p1-skill-heal"   class="skill-btn" data-side="P1" data-skill="heal">Heal</div>
+    <div id="left-sim" class="panel-view active">
+      <h2>Panel 1 • Spieler 1 (KI)</h2>
+      <div class="row"><label for="p1char">Charakter</label><select id="p1char"></select></div>
+      <div class="row"><label for="p1ai">Profil</label>
+        <select id="p1ai">
+          <option value="aggressive">aggressiv</option>
+          <option value="defensive">defensiv</option>
+          <option value="random">random</option>
+        </select>
+      </div>
+      <div class="row"><label>Skills</label>
+        <div class="skills-grid">
+          <div id="p1-skill-light"  class="skill-btn" data-side="P1" data-skill="light">Light</div>
+          <div id="p1-skill-heavy"  class="skill-btn" data-side="P1" data-skill="heavy">Heavy</div>
+          <div id="p1-skill-spin"   class="skill-btn" data-side="P1" data-skill="spin">Spin</div>
+          <div id="p1-skill-heal"   class="skill-btn" data-side="P1" data-skill="heal">Heal</div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="ui-right" class="panel">
-    <h2>Panel 2 • Spieler 2 (KI)</h2>
-    <div class="row"><label for="p2char">Charakter</label><select id="p2char"></select></div>
-    <div class="row"><label for="p2ai">Profil</label>
-      <select id="p2ai">
-        <option value="defensive">defensiv</option>
-        <option value="aggressive">aggressiv</option>
-        <option value="random">random</option>
-      </select>
-    </div>
-    <div class="row"><label>Skills</label>
-      <div class="skills-grid">
-        <div id="p2-skill-light"  class="skill-btn" data-side="P2" data-skill="light">Light</div>
-        <div id="p2-skill-heavy"  class="skill-btn" data-side="P2" data-skill="heavy">Heavy</div>
-        <div id="p2-skill-spin"   class="skill-btn" data-side="P2" data-skill="spin">Spin</div>
-        <div id="p2-skill-heal"   class="skill-btn" data-side="P2" data-skill="heal">Heal</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Seitenpanel für Editoren -->
-  <div id="center-ui" class="panel">
-    <!-- Char Creator -->
-    <div id="center-char" class="center-view">
+    <div id="left-char" class="panel-view">
+      <h2>Char Creator</h2>
       <div class="center-grid">
         <div class="section">
           <h3>Charakter wählen / laden</h3>
@@ -157,8 +134,37 @@
           <small>Speichern legt/aktualisiert den Charakter in der Datenbank (auch localStorage). „Nutzen“ startet sofort ein Match.</small>
         </div>
       </div>
+    </div>
 
-      <div class="center-grid" style="margin-top:12px;">
+    <div id="left-story" class="panel-view"><h2>Story</h2><p>Platzhalter.</p></div>
+    <div id="left-skill" class="panel-view"><h2>Skill Creator</h2><p>Platzhalter.</p></div>
+    <div id="left-ai" class="panel-view"><h2>KI Creator</h2><p>Platzhalter.</p></div>
+  </div>
+
+  <div id="ui-right" class="panel">
+    <div id="right-sim" class="panel-view active">
+      <h2>Panel 2 • Spieler 2 (KI)</h2>
+      <div class="row"><label for="p2char">Charakter</label><select id="p2char"></select></div>
+      <div class="row"><label for="p2ai">Profil</label>
+        <select id="p2ai">
+          <option value="defensive">defensiv</option>
+          <option value="aggressive">aggressiv</option>
+          <option value="random">random</option>
+        </select>
+      </div>
+      <div class="row"><label>Skills</label>
+        <div class="skills-grid">
+          <div id="p2-skill-light"  class="skill-btn" data-side="P2" data-skill="light">Light</div>
+          <div id="p2-skill-heavy"  class="skill-btn" data-side="P2" data-skill="heavy">Heavy</div>
+          <div id="p2-skill-spin"   class="skill-btn" data-side="P2" data-skill="spin">Spin</div>
+          <div id="p2-skill-heal"   class="skill-btn" data-side="P2" data-skill="heal">Heal</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="right-char" class="panel-view">
+      <h2>Char Creator</h2>
+      <div class="center-grid">
         <div class="section">
           <h3>Basisdaten</h3>
           <div class="row"><label>Name</label><input id="cc-name" type="text" placeholder="z. B. Nova"/></div>
@@ -196,10 +202,15 @@
       </div>
     </div>
 
-    <!-- Platzhalter-Ansichten -->
-    <div id="center-story" class="center-view"><div class="section"><h3>Story</h3><p>Platzhalter.</p></div></div>
-    <div id="center-skill" class="center-view"><div class="section"><h3>Skill Creator</h3><p>Platzhalter.</p></div></div>
-    <div id="center-ai"    class="center-view"><div class="section"><h3>KI Creator</h3><p>Platzhalter.</p></div></div>
+    <div id="right-story" class="panel-view"><h2>Story</h2><p>Platzhalter.</p></div>
+    <div id="right-skill" class="panel-view"><h2>Skill Creator</h2><p>Platzhalter.</p></div>
+    <div id="right-ai" class="panel-view"><h2>KI Creator</h2><p>Platzhalter.</p></div>
+  </div>
+
+  <!-- Debug/HUD-Fenster -->
+  <div id="hud-window" style="display:none; position:absolute; top:80px; left:80px; width:300px; z-index:1000; background:rgba(20,20,30,.9); border:2px solid #2b2b36; border-radius:8px; padding:8px; color:#b9c2ff;">
+    <div id="hud-header" style="cursor:move; font-weight:600; margin-bottom:4px;">Debug</div>
+    <pre id="hud-content" style="margin:0; font-size:12px; white-space:pre-wrap;"></pre>
   </div>
 
   <div id="footer-note">Run: lokaler Server erforderlich – siehe Anleitung unten.</div>

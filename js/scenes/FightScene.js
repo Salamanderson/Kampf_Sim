@@ -6,26 +6,25 @@
 
   // Layout (muss zur index.html passen)
   const GAME_W = 1280, GAME_H = 720;
-  const HEADER_H = 56, SIDE_W = 260, MARGIN = 16, LOG_H = 140;
+  const HEADER_H = 56, SIDE_W = 260, MARGIN = 16;
 
   function computeArena(){
     const leftBlock  = MARGIN + SIDE_W + MARGIN;
     const rightBlock = MARGIN + SIDE_W + MARGIN;
     const topBlock   = HEADER_H + MARGIN;
-    const bottomBlock= MARGIN + LOG_H + MARGIN;
+    const bottomBlock= MARGIN;
     const w = GAME_W - (leftBlock + rightBlock);
     const h = GAME_H - (topBlock + bottomBlock);
     const x = leftBlock + w/2;
     const y = topBlock + h/2;
-    const logY = topBlock + h + MARGIN + LOG_H/2;
-    return { x, y, w, h, log:{ x, y:logY, w, h:LOG_H } };
+    return { x, y, w, h };
   }
 
   const FightScene = new Phaser.Class({
     Extends: Phaser.Scene,
     initialize: function FightScene(){
       Phaser.Scene.call(this, { key: 'FightScene' });
-      this._uiOpts = { showHit:false, showDebug:true, useBrython:true, p1:'aggressive', p2:'defensive', p1CharId:null, p2CharId:null };
+      this._uiOpts = { showHit:false, showDebug:false, useBrython:true, p1:'aggressive', p2:'defensive', p1CharId:null, p2CharId:null };
       this._mode = 'simulator'; // simulator | story | char_creator | skill_creator | ai_creator
       this._paused = false;
       this._ccPreview = null;
@@ -39,14 +38,9 @@
       this._arenaGfx = this.add.graphics().setDepth(-2);
       this._drawArena();
 
-      // Log-Fenster
-      this._logGfx = this.add.graphics().setDepth(-2);
-      this._logText = this.add.text(this.arena.log.x - this.arena.log.w/2 + 8, this.arena.log.y - this.arena.log.h/2 + 6, '', { fontSize:12, color:'#dfe6ff', wordWrap:{ width: this.arena.log.w - 16 } }).setDepth(10);
+      // Log/HUD
       this._logBuffer = [];
-      this._drawLogFrame();
-
-      // HUD
-      this._hud = this.add.text(16, this.scale.height-18, '', { fontSize:12, color:'#b9c2ff' }).setOrigin(0,1).setDepth(1000);
+      this._hudEl = document.getElementById('hud-content');
 
       // Systeme
       this.hitboxes = new HitboxSystem(this);
@@ -61,6 +55,10 @@
           p1CharId:d.p1CharId||null, p2CharId:d.p2CharId||null
         };
         if (this._mode==='simulator') this.restartMatch();
+      });
+
+      window.addEventListener('VC_TOGGLE_DEBUG', (ev)=>{
+        this._uiOpts.showDebug = !!ev.detail?.show;
       });
 
       window.addEventListener('VC_SET_MODE', (ev)=>{
@@ -133,19 +131,10 @@
       g.lineStyle(3, 0x00aaff, 1).strokeRect(A.x-A.w/2, A.y-A.h/2, A.w, A.h);
     },
 
-    _drawLogFrame: function(){
-      const g = this._logGfx; const L = this.arena.log;
-      g.clear();
-      g.fillStyle(0x14141c, 1).fillRect(L.x-L.w/2, L.y-L.h/2, L.w, L.h);
-      g.lineStyle(2, 0x2b2b36, 1).strokeRect(L.x-L.w/2, L.y-L.h/2, L.w, L.h);
-      this.add.text(L.x, L.y - L.h/2 - 12, 'Debug/Log', { fontSize:12, color:'#9fb3ff' }).setOrigin(0.5,1).setDepth(10);
-    },
-
     log: function(msg){
       const t = `[${(this.game.loop.frame|0)}] ${msg}`;
       this._logBuffer.push(t);
       if (this._logBuffer.length > 10) this._logBuffer.shift();
-      this._logText.setText(this._logBuffer.join('\n'));
     },
 
     restartMatch: function(){
@@ -227,12 +216,14 @@
     },
 
     _renderHUD: function(){
-      if (!this._uiOpts.showDebug){ this._hud.setText(''); return; }
+      if (!this._hudEl) return;
+      if (!this._uiOpts.showDebug){ this._hudEl.textContent=''; return; }
       const fps = this.game.loop.actualFps|0;
       const a = this.fighters[0], b = this.fighters[1];
       const s1 = a? `${a.id} HP:${a.hp|0}/${a.maxHp} EN:${a.en|0} ${a.state}${a.moveName?`(${a.moveName}:${a.moveFrame})`:''}` : '';
       const s2 = b? `${b.id} HP:${b.hp|0}/${b.maxHp} EN:${b.en|0} ${b.state}${b.moveName?`(${b.moveName}:${b.moveFrame})`:''}` : '';
-      this._hud.setText(`FPS:${fps}  Mode:${this._mode}  BrythonReady:${window.GameBridge.isBrythonReady()}  Hitstop:${this.feel.hitstopFrames}\n${s1}\n${s2}`);
+      const log = this._logBuffer.join('\n');
+      this._hudEl.textContent = `FPS:${fps}  Mode:${this._mode}  BrythonReady:${window.GameBridge.isBrythonReady()}  Hitstop:${this.feel.hitstopFrames}\n${s1}\n${s2}\n\n${log}`;
     },
 
     _onSkillUsed: function({fighter, move}){

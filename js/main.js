@@ -61,6 +61,18 @@
   };
 
   // ----- UI helpers -----
+  function makeDraggable(el, handle){
+    if (!el) return;
+    let ox=0, oy=0, dragging=false;
+    (handle||el).addEventListener('mousedown', (e)=>{
+      dragging=true; ox=e.clientX - el.offsetLeft; oy=e.clientY - el.offsetTop;
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
+    function move(e){ if(!dragging) return; el.style.left=(e.clientX-ox)+'px'; el.style.top=(e.clientY-oy)+'px'; }
+    function up(){ dragging=false; document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); }
+  }
+
   function populateCharacterSelects(){
     const p1sel = document.getElementById('p1char');
     const p2sel = document.getElementById('p2char');
@@ -86,34 +98,34 @@
     document.querySelectorAll('#ui-header .tab').forEach(b=>b.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
 
-    const center = document.getElementById('center-ui');
-    const panelL = document.getElementById('ui-left');
-    const panelR = document.getElementById('ui-right');
-    const views = {
-      sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
-      story: document.getElementById('center-story'),
-      char: document.getElementById('center-char'),
-      skill: document.getElementById('center-skill'),
-      ai: document.getElementById('center-ai')
-    };
-    Object.values(views).forEach(v=>v && v.classList.remove('active'));
+    const modeMap = { 'tab-sim':'sim', 'tab-story':'story', 'tab-char':'char', 'tab-skill':'skill', 'tab-ai':'ai' };
+    const key = modeMap[id] || 'sim';
 
-    if (id === 'tab-sim'){
-      center.style.display = 'none';
-      panelL.style.display = 'block';
-      panelR.style.display = 'block';
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
-    } else {
-      center.style.display = 'block';
-      panelL.style.display = 'none';
-      panelR.style.display = 'none';
-      let mode = 'story';
-      if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
-      if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
-      if (id==='tab-ai')   { mode='ai_creator';    views.ai.classList.add('active'); }
-      if (id==='tab-story'){ mode='story';         views.story.classList.add('active'); }
-      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
-    }
+    const leftViews = {
+      sim: document.getElementById('left-sim'),
+      story: document.getElementById('left-story'),
+      char: document.getElementById('left-char'),
+      skill: document.getElementById('left-skill'),
+      ai: document.getElementById('left-ai')
+    };
+    const rightViews = {
+      sim: document.getElementById('right-sim'),
+      story: document.getElementById('right-story'),
+      char: document.getElementById('right-char'),
+      skill: document.getElementById('right-skill'),
+      ai: document.getElementById('right-ai')
+    };
+    Object.values(leftViews).forEach(v=>v && v.classList.remove('active'));
+    Object.values(rightViews).forEach(v=>v && v.classList.remove('active'));
+    leftViews[key]?.classList.add('active');
+    rightViews[key]?.classList.add('active');
+
+    let mode = 'simulator';
+    if (key==='char'){ mode='char_creator'; startCharCreatorPreviewFromSelection(); }
+    if (key==='skill'){ mode='skill_creator'; }
+    if (key==='ai'){ mode='ai_creator'; }
+    if (key==='story'){ mode='story'; }
+    window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode }}));
   }
 
   function flashSkill(side, skill){
@@ -153,12 +165,24 @@
         }
       }));
     });
+    const dbg = document.getElementById('toggle-debug');
+    const hud = document.getElementById('hud-window');
+    dbg?.addEventListener('change', ()=>{
+      hud.style.display = dbg.checked ? 'block' : 'none';
+      window.dispatchEvent(new CustomEvent('VC_TOGGLE_DEBUG', { detail:{ show: dbg.checked }}));
+    });
+    // initial state
+    hud.style.display = dbg?.checked ? 'block' : 'none';
+    window.dispatchEvent(new CustomEvent('VC_TOGGLE_DEBUG', { detail:{ show: dbg?.checked }}));
 
     document.getElementById('tab-sim')?.addEventListener('click', ()=>setActiveTab('tab-sim'));
     document.getElementById('tab-story')?.addEventListener('click', ()=>setActiveTab('tab-story'));
     document.getElementById('tab-char')?.addEventListener('click', ()=>setActiveTab('tab-char'));
     document.getElementById('tab-skill')?.addEventListener('click', ()=>setActiveTab('tab-skill'));
     document.getElementById('tab-ai')?.addEventListener('click', ()=>setActiveTab('tab-ai'));
+
+    const hudHeader = document.getElementById('hud-header');
+    makeDraggable(document.getElementById('hud-window'), hudHeader);
   }
 
   // ----- Char Creator: State & Live-Preview -----
