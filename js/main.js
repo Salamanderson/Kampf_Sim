@@ -89,26 +89,42 @@
     const center = document.getElementById('center-ui');
     const panelL = document.getElementById('ui-left');
     const panelR = document.getElementById('ui-right');
+    const simLeft = document.getElementById('sim-left');
+    const simRight = document.getElementById('sim-right');
+    const charLeft = document.getElementById('char-left');
+    const charRight = document.getElementById('char-right');
     const views = {
-      sim: document.getElementById('center-sim'), // nicht vorhanden – nur der Vollständigkeit
       story: document.getElementById('center-story'),
-      char: document.getElementById('center-char'),
       skill: document.getElementById('center-skill'),
       ai: document.getElementById('center-ai')
     };
     Object.values(views).forEach(v=>v && v.classList.remove('active'));
 
+    simLeft.style.display = 'none';
+    simRight.style.display = 'none';
+    charLeft.style.display = 'none';
+    charRight.style.display = 'none';
+
     if (id === 'tab-sim'){
       center.style.display = 'none';
       panelL.style.display = 'block';
       panelR.style.display = 'block';
+      simLeft.style.display = 'block';
+      simRight.style.display = 'block';
       window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'simulator' }}));
+    } else if (id === 'tab-char'){
+      center.style.display = 'none';
+      panelL.style.display = 'block';
+      panelR.style.display = 'block';
+      charLeft.style.display = 'block';
+      charRight.style.display = 'block';
+      startCharCreatorPreviewFromSelection();
+      window.dispatchEvent(new CustomEvent('VC_SET_MODE', { detail:{ mode:'char_creator' }}));
     } else {
       center.style.display = 'block';
       panelL.style.display = 'none';
       panelR.style.display = 'none';
       let mode = 'story';
-      if (id==='tab-char'){ mode='char_creator'; views.char.classList.add('active'); startCharCreatorPreviewFromSelection(); }
       if (id==='tab-skill'){ mode='skill_creator'; views.skill.classList.add('active'); }
       if (id==='tab-ai')   { mode='ai_creator';    views.ai.classList.add('active'); }
       if (id==='tab-story'){ mode='story';         views.story.classList.add('active'); }

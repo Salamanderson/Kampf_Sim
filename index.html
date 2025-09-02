@@ -13,7 +13,12 @@
 
   <style>
     html, body { margin:0; padding:0; background:#0e0e12; color:#eaeaf0; font-family:system-ui,Segoe UI,Roboto,Inter,Arial,Helvetica,sans-serif; height:100%; overflow:hidden; }
-    #game-root { width:100vw; height:100vh; display:grid; place-items:center; }
+    #game-root {
+      position:absolute;
+      top:56px; bottom:16px;
+      left:292px; right:292px;
+      display:flex; justify-content:center; align-items:center;
+    }
 
     /* Top-Leiste */
     #ui-header {
@@ -93,49 +98,26 @@
 
   <!-- SEITENPANELS -->
   <div id="ui-left" class="panel">
-    <h2>Panel 1 • Spieler 1 (KI)</h2>
-    <div class="row"><label for="p1char">Charakter</label><select id="p1char"></select></div>
-    <div class="row"><label for="p1ai">Profil</label>
-      <select id="p1ai">
-        <option value="aggressive">aggressiv</option>
-        <option value="defensive">defensiv</option>
-        <option value="random">random</option>
-      </select>
-    </div>
-    <div class="row"><label>Skills</label>
-      <div class="skills-grid">
-        <div id="p1-skill-light"  class="skill-btn" data-side="P1" data-skill="light">Light</div>
-        <div id="p1-skill-heavy"  class="skill-btn" data-side="P1" data-skill="heavy">Heavy</div>
-        <div id="p1-skill-spin"   class="skill-btn" data-side="P1" data-skill="spin">Spin</div>
-        <div id="p1-skill-heal"   class="skill-btn" data-side="P1" data-skill="heal">Heal</div>
+    <div id="sim-left">
+      <h2>Panel 1 • Spieler 1 (KI)</h2>
+      <div class="row"><label for="p1char">Charakter</label><select id="p1char"></select></div>
+      <div class="row"><label for="p1ai">Profil</label>
+        <select id="p1ai">
+          <option value="aggressive">aggressiv</option>
+          <option value="defensive">defensiv</option>
+          <option value="random">random</option>
+        </select>
+      </div>
+      <div class="row"><label>Skills</label>
+        <div class="skills-grid">
+          <div id="p1-skill-light"  class="skill-btn" data-side="P1" data-skill="light">Light</div>
+          <div id="p1-skill-heavy"  class="skill-btn" data-side="P1" data-skill="heavy">Heavy</div>
+          <div id="p1-skill-spin"   class="skill-btn" data-side="P1" data-skill="spin">Spin</div>
+          <div id="p1-skill-heal"   class="skill-btn" data-side="P1" data-skill="heal">Heal</div>
+        </div>
       </div>
     </div>
-  </div>
-
-  <div id="ui-right" class="panel">
-    <h2>Panel 2 • Spieler 2 (KI)</h2>
-    <div class="row"><label for="p2char">Charakter</label><select id="p2char"></select></div>
-    <div class="row"><label for="p2ai">Profil</label>
-      <select id="p2ai">
-        <option value="defensive">defensiv</option>
-        <option value="aggressive">aggressiv</option>
-        <option value="random">random</option>
-      </select>
-    </div>
-    <div class="row"><label>Skills</label>
-      <div class="skills-grid">
-        <div id="p2-skill-light"  class="skill-btn" data-side="P2" data-skill="light">Light</div>
-        <div id="p2-skill-heavy"  class="skill-btn" data-side="P2" data-skill="heavy">Heavy</div>
-        <div id="p2-skill-spin"   class="skill-btn" data-side="P2" data-skill="spin">Spin</div>
-        <div id="p2-skill-heal"   class="skill-btn" data-side="P2" data-skill="heal">Heal</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Seitenpanel für Editoren -->
-  <div id="center-ui" class="panel">
-    <!-- Char Creator -->
-    <div id="center-char" class="center-view">
+    <div id="char-left" style="display:none;">
       <div class="center-grid">
         <div class="section">
           <h3>Charakter wählen / laden</h3>
@@ -157,7 +139,30 @@
           <small>Speichern legt/aktualisiert den Charakter in der Datenbank (auch localStorage). „Nutzen“ startet sofort ein Match.</small>
         </div>
       </div>
+    </div>
+  </div>
 
+  <div id="ui-right" class="panel">
+    <div id="sim-right">
+      <h2>Panel 2 • Spieler 2 (KI)</h2>
+      <div class="row"><label for="p2char">Charakter</label><select id="p2char"></select></div>
+      <div class="row"><label for="p2ai">Profil</label>
+        <select id="p2ai">
+          <option value="defensive">defensiv</option>
+          <option value="aggressive">aggressiv</option>
+          <option value="random">random</option>
+        </select>
+      </div>
+      <div class="row"><label>Skills</label>
+        <div class="skills-grid">
+          <div id="p2-skill-light"  class="skill-btn" data-side="P2" data-skill="light">Light</div>
+          <div id="p2-skill-heavy"  class="skill-btn" data-side="P2" data-skill="heavy">Heavy</div>
+          <div id="p2-skill-spin"   class="skill-btn" data-side="P2" data-skill="spin">Spin</div>
+          <div id="p2-skill-heal"   class="skill-btn" data-side="P2" data-skill="heal">Heal</div>
+        </div>
+      </div>
+    </div>
+    <div id="char-right" style="display:none;">
       <div class="center-grid" style="margin-top:12px;">
         <div class="section">
           <h3>Basisdaten</h3>
@@ -195,7 +200,10 @@
         </div>
       </div>
     </div>
+  </div>
 
+  <!-- Seitenpanel für Editoren -->
+  <div id="center-ui" class="panel">
     <!-- Platzhalter-Ansichten -->
     <div id="center-story" class="center-view"><div class="section"><h3>Story</h3><p>Platzhalter.</p></div></div>
     <div id="center-skill" class="center-view"><div class="section"><h3>Skill Creator</h3><p>Platzhalter.</p></div></div>
