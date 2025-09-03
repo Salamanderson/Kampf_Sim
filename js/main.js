@@ -198,11 +198,27 @@
       stats: {
         maxHp: parseInt(document.getElementById('cc-maxhp').value||'120',10),
         maxEn: parseInt(document.getElementById('cc-maxen').value||'100',10),
-        damageScale: 1.0,
+        physAtk: parseFloat(document.getElementById('cc-physatk').value||'1'),
+        energyAtk: parseFloat(document.getElementById('cc-enatk').value||'1'),
+        attackSpeed: parseFloat(document.getElementById('cc-atkspeed').value||'1'),
+        castSpeed: parseFloat(document.getElementById('cc-castspeed').value||'1'),
+        channelSpeed: parseFloat(document.getElementById('cc-channelspeed').value||'1'),
+        physRange: parseFloat(document.getElementById('cc-physrange').value||'1'),
+        energyRange: parseFloat(document.getElementById('cc-energyrange').value||'1'),
         accel: parseFloat(document.getElementById('cc-accel').value||'1800'),
         moveSpeed: parseFloat(document.getElementById('cc-speed').value||'240'),
         dashSpeed: parseFloat(document.getElementById('cc-dash').value||'560'),
-        friction: parseFloat(document.getElementById('cc-fric').value||'0.86')
+        friction: parseFloat(document.getElementById('cc-fric').value||'0.86'),
+        physDef: parseFloat(document.getElementById('cc-physdef').value||'0'),
+        energyDef: parseFloat(document.getElementById('cc-enedef').value||'0'),
+        hpRegen: parseFloat(document.getElementById('cc-hpregen').value||'0'),
+        enRegen: parseFloat(document.getElementById('cc-enregen').value||'0'),
+        skillSlots: parseInt(document.getElementById('cc-skillslots').value||'4',10),
+        special: document.getElementById('cc-special').value||'',
+        statusPower: parseFloat(document.getElementById('cc-statuspower').value||'0'),
+        statusDuration: parseFloat(document.getElementById('cc-statusduration').value||'1'),
+        statusResist: parseFloat(document.getElementById('cc-statusresist').value||'0'),
+        statusDurResist: parseFloat(document.getElementById('cc-statusdurresist').value||'0')
       },
       loadout
     };
@@ -215,10 +231,27 @@
     document.getElementById('cc-radius').value= def.radius || 22;
     document.getElementById('cc-maxhp').value = def.stats?.maxHp ?? 120;
     document.getElementById('cc-maxen').value = def.stats?.maxEn ?? 100;
+    document.getElementById('cc-physatk').value = def.stats?.physAtk ?? 1;
+    document.getElementById('cc-enatk').value = def.stats?.energyAtk ?? 1;
+    document.getElementById('cc-atkspeed').value = def.stats?.attackSpeed ?? 1;
+    document.getElementById('cc-castspeed').value = def.stats?.castSpeed ?? 1;
+    document.getElementById('cc-channelspeed').value = def.stats?.channelSpeed ?? 1;
+    document.getElementById('cc-physrange').value = def.stats?.physRange ?? 1;
+    document.getElementById('cc-energyrange').value = def.stats?.energyRange ?? 1;
     document.getElementById('cc-accel').value = def.stats?.accel ?? 1800;
     document.getElementById('cc-speed').value = def.stats?.moveSpeed ?? 240;
     document.getElementById('cc-dash').value  = def.stats?.dashSpeed ?? 560;
     document.getElementById('cc-fric').value  = def.stats?.friction ?? 0.86;
+    document.getElementById('cc-physdef').value = def.stats?.physDef ?? 0;
+    document.getElementById('cc-enedef').value = def.stats?.energyDef ?? 0;
+    document.getElementById('cc-hpregen').value = def.stats?.hpRegen ?? 0;
+    document.getElementById('cc-enregen').value = def.stats?.enRegen ?? 0;
+    document.getElementById('cc-skillslots').value = def.stats?.skillSlots ?? 4;
+    document.getElementById('cc-special').value = def.stats?.special ?? '';
+    document.getElementById('cc-statuspower').value = def.stats?.statusPower ?? 0;
+    document.getElementById('cc-statusduration').value = def.stats?.statusDuration ?? 1;
+    document.getElementById('cc-statusresist').value = def.stats?.statusResist ?? 0;
+    document.getElementById('cc-statusdurresist').value = def.stats?.statusDurResist ?? 0;
     const set = new Set(def.loadout||[]);
     document.getElementById('cc-skill-light').checked = set.has('light');
     document.getElementById('cc-skill-heavy').checked = set.has('heavy');
@@ -237,7 +270,17 @@
     const chars = window.GameData.characters || [];
     const def = chars.find(c=>c.id===id) || chars[0] || {
       id:'custom', name:'Custom', shape:'circle', color:0x64c8ff, radius:22,
-      stats:{ maxHp:120, maxEn:100, damageScale:1.0, accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86 },
+      stats:{
+        maxHp:120, maxEn:100,
+        physAtk:1.0, energyAtk:1.0,
+        attackSpeed:1.0, castSpeed:1.0, channelSpeed:1.0,
+        physRange:1.0, energyRange:1.0,
+        accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86,
+        physDef:0.0, energyDef:0.0,
+        hpRegen:0.0, enRegen:0.0,
+        skillSlots:4, special:'',
+        statusPower:0.0, statusDuration:1.0, statusResist:0.0, statusDurResist:0.0
+      },
       loadout:['light','heavy','spin','heal']
     };
     applyCCDefToForm(def);
@@ -247,7 +290,10 @@
 
     function bindCharCreatorUI(){
     // Eingaben -> Realtime Preview
-    ['cc-name','cc-shape','cc-color','cc-radius','cc-maxhp','cc-maxen','cc-accel','cc-speed','cc-dash','cc-fric',
+    ['cc-name','cc-shape','cc-color','cc-radius','cc-maxhp','cc-maxen',
+     'cc-physatk','cc-enatk','cc-atkspeed','cc-castspeed','cc-channelspeed','cc-physrange','cc-energyrange',
+     'cc-accel','cc-speed','cc-dash','cc-fric','cc-physdef','cc-enedef','cc-hpregen','cc-enregen',
+     'cc-skillslots','cc-special','cc-statuspower','cc-statusduration','cc-statusresist','cc-statusdurresist',
      'cc-skill-light','cc-skill-heavy','cc-skill-spin','cc-skill-heal'
     ].forEach(id=>{
       const el = document.getElementById(id);
@@ -265,7 +311,17 @@
     document.getElementById('cc-new')?.addEventListener('click', ()=>{
       applyCCDefToForm({
         id:'custom', name:'Custom', shape:'circle', color:0x64c8ff, radius:22,
-        stats:{ maxHp:120, maxEn:100, damageScale:1.0, accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86 },
+        stats:{
+          maxHp:120, maxEn:100,
+          physAtk:1.0, energyAtk:1.0,
+          attackSpeed:1.0, castSpeed:1.0, channelSpeed:1.0,
+          physRange:1.0, energyRange:1.0,
+          accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86,
+          physDef:0.0, energyDef:0.0,
+          hpRegen:0.0, enRegen:0.0,
+          skillSlots:4, special:'',
+          statusPower:0.0, statusDuration:1.0, statusResist:0.0, statusDurResist:0.0
+        },
         loadout:['light','heavy','spin','heal']
       });
       emitCCUpdate();
