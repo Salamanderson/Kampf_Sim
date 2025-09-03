@@ -7,7 +7,7 @@
     this._debug = false;
   }
 
-  // hb: { shape:'circle', x,y,r, owner, damage, hitstun, hitstop, knock:{x,y}, kind }
+  // hb: { shape:'circle', x,y,r, owner, damage, hitstun, hitstop, knock:{x,y}, kind, type }
   HitboxSystem.prototype.register = function(hb){
     if (!hb || hb.shape!=='circle') return;
     this.list.push(hb);

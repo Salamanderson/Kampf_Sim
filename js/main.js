@@ -198,11 +198,27 @@
       stats: {
         maxHp: parseInt(document.getElementById('cc-maxhp').value||'120',10),
         maxEn: parseInt(document.getElementById('cc-maxen').value||'100',10),
-        damageScale: 1.0,
-        accel: parseFloat(document.getElementById('cc-accel').value||'1800'),
+        physAtk: 1.0,
+        energyAtk: 1.0,
+        attackSpeed: 1.0,
+        castSpeed: 1.0,
+        channelSpeed: 1.0,
+        physRange: 1.0,
+        energyRange: 1.0,
         moveSpeed: parseFloat(document.getElementById('cc-speed').value||'240'),
+        accel: parseFloat(document.getElementById('cc-accel').value||'1800'),
         dashSpeed: parseFloat(document.getElementById('cc-dash').value||'560'),
-        friction: parseFloat(document.getElementById('cc-fric').value||'0.86')
+        friction: parseFloat(document.getElementById('cc-fric').value||'0.86'),
+        physDefense: 0,
+        energyDefense: 0,
+        hpRegen: 0,
+        enRegen: 0,
+        skillSlots: 4,
+        special: null,
+        statusPower: 0,
+        statusDuration: 1.0,
+        statusResist: 0,
+        statusDurResist: 1.0
       },
       loadout
     };
@@ -237,7 +253,31 @@
     const chars = window.GameData.characters || [];
     const def = chars.find(c=>c.id===id) || chars[0] || {
       id:'custom', name:'Custom', shape:'circle', color:0x64c8ff, radius:22,
-      stats:{ maxHp:120, maxEn:100, damageScale:1.0, accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86 },
+      stats:{
+        maxHp:120,
+        maxEn:100,
+        physAtk:1.0,
+        energyAtk:1.0,
+        attackSpeed:1.0,
+        castSpeed:1.0,
+        channelSpeed:1.0,
+        physRange:1.0,
+        energyRange:1.0,
+        moveSpeed:240,
+        accel:1800,
+        dashSpeed:560,
+        friction:0.86,
+        physDefense:0,
+        energyDefense:0,
+        hpRegen:0,
+        enRegen:0,
+        skillSlots:4,
+        special:null,
+        statusPower:0,
+        statusDuration:1.0,
+        statusResist:0,
+        statusDurResist:1.0
+      },
       loadout:['light','heavy','spin','heal']
     };
     applyCCDefToForm(def);
@@ -265,7 +305,31 @@
     document.getElementById('cc-new')?.addEventListener('click', ()=>{
       applyCCDefToForm({
         id:'custom', name:'Custom', shape:'circle', color:0x64c8ff, radius:22,
-        stats:{ maxHp:120, maxEn:100, damageScale:1.0, accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86 },
+        stats:{
+          maxHp:120,
+          maxEn:100,
+          physAtk:1.0,
+          energyAtk:1.0,
+          attackSpeed:1.0,
+          castSpeed:1.0,
+          channelSpeed:1.0,
+          physRange:1.0,
+          energyRange:1.0,
+          moveSpeed:240,
+          accel:1800,
+          dashSpeed:560,
+          friction:0.86,
+          physDefense:0,
+          energyDefense:0,
+          hpRegen:0,
+          enRegen:0,
+          skillSlots:4,
+          special:null,
+          statusPower:0,
+          statusDuration:1.0,
+          statusResist:0,
+          statusDurResist:1.0
+        },
         loadout:['light','heavy','spin','heal']
       });
       emitCCUpdate();
