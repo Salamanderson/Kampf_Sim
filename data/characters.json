@@ -7,7 +7,7 @@
       "shape": "circle",
       "color": 6612095,
       "radius": 22,
-      "stats": { "maxHp": 120, "maxEn": 100, "damageScale": 1.0, "accel": 1900, "moveSpeed": 250, "dashSpeed": 580, "friction": 0.86 },
+    "stats": { "maxHp": 120, "maxEn": 100, "physicalAttack": 1.0, "energyAttack": 1.0, "attackSpeed": 1.0, "castSpeed": 1.0, "channelSpeed": 1.0, "physicalRange": 1.0, "energyRange": 1.0, "moveSpeed": 250, "physicalDefense": 0, "energyDefense": 0, "hpRegen": 0, "energyRegen": 0, "skillSlots": 4, "special": null, "statusPower": 0, "statusDuration": 1.0, "statusResistance": 0, "statusDurationResistance": 0, "accel": 1900, "dashSpeed": 580, "friction": 0.86 },
       "loadout": ["light","heavy","spin","heal"]
     },
     {
@@ -16,7 +16,7 @@
       "shape": "triangle",
       "color": 16746442,
       "radius": 24,
-      "stats": { "maxHp": 110, "maxEn": 100, "damageScale": 1.0, "accel": 1850, "moveSpeed": 245, "dashSpeed": 560, "friction": 0.86 },
+    "stats": { "maxHp": 110, "maxEn": 100, "physicalAttack": 1.0, "energyAttack": 1.0, "attackSpeed": 1.0, "castSpeed": 1.0, "channelSpeed": 1.0, "physicalRange": 1.0, "energyRange": 1.0, "moveSpeed": 245, "physicalDefense": 0, "energyDefense": 0, "hpRegen": 0, "energyRegen": 0, "skillSlots": 4, "special": null, "statusPower": 0, "statusDuration": 1.0, "statusResistance": 0, "statusDurationResistance": 0, "accel": 1850, "dashSpeed": 560, "friction": 0.86 },
       "loadout": ["light","heavy","spin","heal"]
     }
   ]
