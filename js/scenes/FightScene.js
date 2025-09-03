@@ -173,6 +173,12 @@
       this._attachHpBar(p1);
       this._attachHpBar(p2);
 
+      // Panel-Balken initialisieren
+      const hp1=document.getElementById('p1-hp'); if (hp1){ hp1.max=p1.maxHp; hp1.value=p1.hp; }
+      const en1=document.getElementById('p1-en'); if (en1){ en1.max=p1.maxEn; en1.value=p1.en; }
+      const hp2=document.getElementById('p2-hp'); if (hp2){ hp2.max=p2.maxHp; hp2.value=p2.hp; }
+      const en2=document.getElementById('p2-en'); if (en2){ en2.max=p2.maxEn; en2.value=p2.en; }
+
       this.log(`Match gestartet: ${p1.name} vs ${p2.name}`);
     },
 
@@ -219,6 +225,10 @@
           f._hpFill.setSize((w-2)*hpRatio, 4);
           f._hpFill.setFillStyle(color);
         }
+        const hpEl = document.getElementById(f.teamId===1?'p1-hp':'p2-hp');
+        if (hpEl){ hpEl.max = f.maxHp; hpEl.value = f.hp; }
+        const enEl = document.getElementById(f.teamId===1?'p1-en':'p2-en');
+        if (enEl){ enEl.max = f.maxEn; enEl.value = f.en; }
       }
 
       // Treffer prüfen

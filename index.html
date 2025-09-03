@@ -46,6 +46,7 @@
     select, input[type="text"], input[type="number"], input[type="color"], input[type="range"] {
       background:#14141c; color:#eaeaf0; border:1px solid #2b2b36; border-radius:8px; padding:6px 8px; font-size:12px; width:100%;
     }
+    progress { width:100%; height:12px; }
     .skills-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; }
     .skill-btn { border:1px solid #2b2b36; border-radius:10px; padding:8px; background:#14141c; color:#eaeaf0; cursor:pointer; text-align:center; font-size:12px; user-select:none; }
     .skill-btn.active { box-shadow: 0 0 12px #66d1ff; border-color:#66d1ff; }
@@ -125,6 +126,8 @@
           <div id="p1-skill-heal"   class="skill-btn" data-side="P1" data-skill="heal">Heal</div>
         </div>
       </div>
+      <div class="row"><label>HP</label><progress id="p1-hp" value="0" max="100" style="width:100%"></progress></div>
+      <div class="row"><label>EN</label><progress id="p1-en" value="0" max="100" style="width:100%"></progress></div>
     </div>
 
     <div id="panel-char-left" style="display:none;">
@@ -181,6 +184,8 @@
           <div id="p2-skill-heal"   class="skill-btn" data-side="P2" data-skill="heal">Heal</div>
         </div>
       </div>
+      <div class="row"><label>HP</label><progress id="p2-hp" value="0" max="100" style="width:100%"></progress></div>
+      <div class="row"><label>EN</label><progress id="p2-en" value="0" max="100" style="width:100%"></progress></div>
     </div>
 
     <div id="panel-char-right" style="display:none;">
@@ -204,10 +209,27 @@
           <h3>Stats</h3>
           <div class="row-inline"><label style="width:100px">HP</label><input id="cc-maxhp" type="number" value="120"/></div>
           <div class="row-inline"><label style="width:100px">EN</label><input id="cc-maxen" type="number" value="100"/></div>
+          <div class="row-inline"><label style="width:100px">Phys ATK</label><input id="cc-physatk" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">EN ATK</label><input id="cc-enatk" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">Atk Spd</label><input id="cc-atkspeed" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">Cast Spd</label><input id="cc-castspeed" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">Channel Spd</label><input id="cc-channelspeed" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">Phys Range</label><input id="cc-physrange" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">EN Range</label><input id="cc-energyrange" type="number" step="0.1" value="1"/></div>
           <div class="row-inline"><label style="width:100px">Accel</label><input id="cc-accel" type="number" value="1800"/></div>
-          <div class="row-inline"><label style="width:100px">Speed</label><input id="cc-speed" type="number" value="240"/></div>
+          <div class="row-inline"><label style="width:100px">Move Spd</label><input id="cc-speed" type="number" value="240"/></div>
           <div class="row-inline"><label style="width:100px">Dash</label><input id="cc-dash" type="number" value="560"/></div>
           <div class="row-inline"><label style="width:100px">Friction</label><input id="cc-fric" type="number" step="0.01" value="0.86"/></div>
+          <div class="row-inline"><label style="width:100px">Phys Def</label><input id="cc-physdef" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">EN Def</label><input id="cc-enedef" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">HP Regen</label><input id="cc-hpregen" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">EN Regen</label><input id="cc-enregen" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">Skill Slots</label><input id="cc-skillslots" type="number" value="4"/></div>
+          <div class="row-inline"><label style="width:100px">Spezial</label><input id="cc-special" type="text" value=""/></div>
+          <div class="row-inline"><label style="width:100px">Status Power</label><input id="cc-statuspower" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">Status Dauer</label><input id="cc-statusduration" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">Status Resist</label><input id="cc-statusresist" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">StatusDurRes</label><input id="cc-statusdurresist" type="number" step="0.1" value="0"/></div>
         </div>
 
         <div class="section" style="grid-column: 1 / span 2;">
