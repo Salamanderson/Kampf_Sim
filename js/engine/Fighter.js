@@ -3,10 +3,10 @@
   const TWO_PI = Math.PI * 2;
 
   const defaultMoves = {
-    light: { name:'light', startup:6, active:3, recovery:8,  damage:7,  hitstun:10, hitstop:6,  range:40, radius:20 },
-    heavy: { name:'heavy', startup:10,active:4, recovery:12, damage:12, hitstun:14, hitstop:8,  range:58, radius:24, lunge:80, cd:42 },
-    spin:  { name:'spin',  startup:8, active:6,  recovery:10, damage:9,  hitstun:12, hitstop:8,  range:0,  radius:52, cd:90 },
-    heal:  { name:'heal',  startup:10,active:0,  recovery:10, heal:18, cost:25,                   cd:120 }
+    light: { name:'light', type:'physical', startup:6, active:3, recovery:8,  damage:7,  hitstun:10, hitstop:6,  range:40, radius:20 },
+    heavy: { name:'heavy', type:'physical', startup:10,active:4, recovery:12, damage:12, hitstun:14, hitstop:8,  range:58, radius:24, lunge:80, cd:42 },
+    spin:  { name:'spin',  type:'physical', startup:8, active:6,  recovery:10, damage:9,  hitstun:12, hitstop:8,  range:0,  radius:52, cd:90 },
+    heal:  { name:'heal',  type:'energy',   startup:10,active:0,  recovery:10, heal:18, cost:25,                   cd:120 }
   };
 
   const Fighter = function(scene, cfg){
@@ -22,9 +22,21 @@
     this.radius = cfg.radius || 22;
 
     // Stats
-    const base = { maxHp:100, maxEn:100, damageScale:1.0, accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86 };
+    const base = {
+      maxHp:100, maxEn:100,
+      physAtk:1, energyAtk:1,
+      attackSpeed:1, castSpeed:1, channelSpeed:1,
+      physRange:1, energyRange:1,
+      accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86,
+      physDef:0, energyDef:0,
+      hpRegen:0, enRegen:0,
+      skillSlots:4, special:null,
+      statusPower:0, statusDuration:1, statusResist:0, statusDurationResist:1,
+      damageScale:1.0
+    };
     this.stats = Object.assign({}, base, cfg.stats||{});
-    this.maxHp = this.stats.maxHp; this.hp = this.maxHp; this.en = this.stats.maxEn;
+    this.maxHp = this.stats.maxHp; this.maxEn = this.stats.maxEn;
+    this.hp = this.maxHp; this.en = this.maxEn;
 
     // Loadout (welche Moves erlaubt)
     const loadout = cfg.loadout && Array.isArray(cfg.loadout) ? cfg.loadout.slice() : ['light','heavy','spin','heal'];
@@ -96,7 +108,7 @@
       if (d<dmin){ dmin=d; closest=e; }
     }
     return {
-      self: { id:this.id, teamId:this.teamId, x:this.x, y:this.y, vx:this.vx, vy:this.vy, hp:this.hp, maxHp:this.maxHp, en:this.en, state:this.state },
+      self: { id:this.id, teamId:this.teamId, x:this.x, y:this.y, vx:this.vx, vy:this.vy, hp:this.hp, maxHp:this.maxHp, en:this.en, maxEn:this.maxEn, state:this.state },
       closestEnemy: closest ? { id:closest.id, x:closest.x, y:closest.y, hp:closest.hp } : null,
       cooldowns: Object.assign({}, this.cooldowns),
       env: { arena: env.arena },
@@ -153,18 +165,34 @@
   };
 
   Fighter.prototype.tryHeal = function(){
-    if (!this.moves.heal) return;
+    const base = this.moves.heal; if (!base) return;
     if (this.cooldowns.heal>0 || this.state.startsWith('attack_')) return;
-    if (this.en < (this.moves.heal.cost||0)) return;
-    this.state = 'attack_heal'; this.moveName='heal'; this.moveFrame=0; this.stateTimer=this.moves.heal.startup+this.moves.heal.recovery;
+    if (this.en < (base.cost||0)) return;
+    const speed = this.stats.castSpeed;
+    const m = Object.assign({}, base, {
+      startup: Math.max(1, Math.round(base.startup / speed)),
+      recovery: Math.max(1, Math.round(base.recovery / speed)),
+      heal: (base.heal||0) * this.stats.energyAtk
+    });
+    this.currentMove = m;
+    this.state = 'attack_heal'; this.moveName='heal'; this.moveFrame=0; this.stateTimer=m.startup + m.recovery;
     this.scene.events.emit('skill_used', { fighter:this, move:'heal' });
   };
 
   Fighter.prototype.tryAttack = function(kind){
-    const m = this.moves[kind]; if (!m) return;
+    const base = this.moves[kind]; if (!base) return;
     if (this.state==='hitstun'||this.state==='dash'||this.state==='ko') return;
     if (this.state.startsWith('attack_')) return;
-    if (m.cd && this.cooldowns[kind]>0) return;
+    if (base.cd && this.cooldowns[kind]>0) return;
+    const speed = base.type==='energy'?this.stats.castSpeed:this.stats.attackSpeed;
+    const m = Object.assign({}, base, {
+      startup: Math.max(1, Math.round(base.startup / speed)),
+      active:  Math.max(0, Math.round((base.active||0) / speed)),
+      recovery:Math.max(1, Math.round(base.recovery / speed)),
+      damage:(base.damage||0) * (base.type==='energy'?this.stats.energyAtk:this.stats.physAtk),
+      range: (base.range||0) * (base.type==='energy'?this.stats.energyRange:this.stats.physRange)
+    });
+    this.currentMove = m;
     this.state = 'attack_'+kind; this.moveName = kind; this.moveFrame=0; this.stateTimer = m.startup + (m.active||0) + m.recovery;
     this.scene.events.emit('skill_used', { fighter:this, move:kind });
   };
@@ -204,10 +232,18 @@
       if (this.cooldowns[k]>0) this.cooldowns[k] -= dt/1000; // Sekunden
     }
 
+    // Regeneration
+    if (this.stats.hpRegen>0){
+      this.hp = Math.min(this.maxHp, this.hp + this.stats.hpRegen * dt/1000);
+    }
+    if (this.stats.enRegen>0){
+      this.en = Math.min(this.maxEn, this.en + this.stats.enRegen * dt/1000);
+    }
+
     // Move-Logik
     if (this.state.startsWith('attack_')){
       this.moveFrame++; this.stateTimer--;
-      const m = this.moves[this.moveName];
+      const m = this.currentMove || this.moves[this.moveName];
       if (this.moveName==='heal'){
         if (this.moveFrame===m.startup){
           this.en -= (m.cost||0);
@@ -232,7 +268,7 @@
           const cy = this.y + (m.range? Math.sin(ang)*(this.radius + m.range*0.6) : 0);
           const pos = (this.moveName==='spin') ? {x:this.x, y:this.y} : {x:cx, y:cy};
           const hb = {
-            shape:'circle', owner:this, kind:this.moveName,
+            shape:'circle', owner:this, kind:this.moveName, type:m.type||'physical',
             x: pos.x, y: pos.y, r: m.radius || 20,
             damage:(m.damage||0)*this.stats.damageScale,
             hitstun:m.hitstun||10, hitstop:m.hitstop||6,
@@ -249,7 +285,7 @@
           this.cooldowns.spin = (m.cd||90)/60;
         }
       }
-      if (this.stateTimer<=0){ this.state='idle'; this.moveName=null; this.moveFrame=0; }
+      if (this.stateTimer<=0){ this.state='idle'; this.moveName=null; this.moveFrame=0; this.currentMove=null; }
     }
 
     if (this.state==='dash'){
@@ -259,6 +295,9 @@
 
     // Physik
     this._applyFriction();
+    const maxSp = this.stats.moveSpeed;
+    const sp = Math.hypot(this.vx, this.vy);
+    if (sp>maxSp){ const s=maxSp/sp; this.vx*=s; this.vy*=s; }
     this.x += this.vx * (dt/1000);
     this.y += this.vy * (dt/1000);
 
@@ -281,7 +320,13 @@
 
   Fighter.prototype.receiveHit = function(h){
     if (this.ko) return;
-    this.hp -= h.damage;
+    let dmg = h.damage;
+    if (h.type==='energy'){
+      dmg *= 100/(100+this.stats.energyDef);
+    } else {
+      dmg *= 100/(100+this.stats.physDef);
+    }
+    this.hp -= dmg;
     this.scene.feel.onHit(h);
     this.vx += h.knock.x*0.02; this.vy += h.knock.y*0.02;
     this.state = 'hitstun'; this.stateTimer = h.hitstun;

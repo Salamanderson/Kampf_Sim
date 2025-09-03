@@ -50,6 +50,10 @@
     .skill-btn { border:1px solid #2b2b36; border-radius:10px; padding:8px; background:#14141c; color:#eaeaf0; cursor:pointer; text-align:center; font-size:12px; user-select:none; }
     .skill-btn.active { box-shadow: 0 0 12px #66d1ff; border-color:#66d1ff; }
 
+    .stat-bar { position:relative; width:100%; height:8px; background:#2b2b36; border-radius:4px; overflow:hidden; }
+    .stat-bar .fill { position:absolute; top:0; left:0; height:100%; width:100%; background:#35de85; }
+    .stat-bar.en .fill { background:#7ad7ff; }
+
     .center-grid { display:flex; flex-direction:column; gap:12px; }
     .section { border:1px solid #2b2b36; border-radius:10px; padding:10px; background:rgba(20,20,30,.65); }
     .section h3 { margin:0 0 8px 0; font-size:14px; color:#9cc9ff; }
@@ -117,6 +121,8 @@
           <option value="random">random</option>
         </select>
       </div>
+      <div class="row"><label>HP</label><div class="stat-bar"><div id="p1-hp-fill" class="fill"></div></div></div>
+      <div class="row"><label>EN</label><div class="stat-bar en"><div id="p1-en-fill" class="fill"></div></div></div>
       <div class="row"><label>Skills</label>
         <div class="skills-grid">
           <div id="p1-skill-light"  class="skill-btn" data-side="P1" data-skill="light">Light</div>
@@ -173,6 +179,8 @@
           <option value="random">random</option>
         </select>
       </div>
+      <div class="row"><label>HP</label><div class="stat-bar"><div id="p2-hp-fill" class="fill"></div></div></div>
+      <div class="row"><label>EN</label><div class="stat-bar en"><div id="p2-en-fill" class="fill"></div></div></div>
       <div class="row"><label>Skills</label>
         <div class="skills-grid">
           <div id="p2-skill-light"  class="skill-btn" data-side="P2" data-skill="light">Light</div>
@@ -208,6 +216,23 @@
           <div class="row-inline"><label style="width:100px">Speed</label><input id="cc-speed" type="number" value="240"/></div>
           <div class="row-inline"><label style="width:100px">Dash</label><input id="cc-dash" type="number" value="560"/></div>
           <div class="row-inline"><label style="width:100px">Friction</label><input id="cc-fric" type="number" step="0.01" value="0.86"/></div>
+          <div class="row-inline"><label style="width:100px">PhysAtk</label><input id="cc-physatk" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">EnAtk</label><input id="cc-enatk" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">AtkSpd</label><input id="cc-atkspd" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">CastSpd</label><input id="cc-castspd" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">ChanSpd</label><input id="cc-chanspd" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">PhysRange</label><input id="cc-physrng" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">EnRange</label><input id="cc-enrng" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">PhysDef</label><input id="cc-physdef" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">EnDef</label><input id="cc-endef" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">HPRegen</label><input id="cc-hpreg" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">EnRegen</label><input id="cc-enreg" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">SkillSlots</label><input id="cc-slots" type="number" value="4"/></div>
+          <div class="row-inline"><label style="width:100px">Special</label><input id="cc-special" type="text"/></div>
+          <div class="row-inline"><label style="width:100px">SE Power</label><input id="cc-stapow" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">SE Dur</label><input id="cc-stadur" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline"><label style="width:100px">SE Resist</label><input id="cc-stares" type="number" step="0.1" value="0"/></div>
+          <div class="row-inline"><label style="width:100px">SE DurRes</label><input id="cc-stadurres" type="number" step="0.1" value="1"/></div>
         </div>
 
         <div class="section" style="grid-column: 1 / span 2;">
