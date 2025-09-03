@@ -173,6 +173,11 @@
       this._attachHpBar(p1);
       this._attachHpBar(p2);
 
+      document.getElementById('p1-hp-fill')?.style.setProperty('width','100%');
+      document.getElementById('p1-en-fill')?.style.setProperty('width','100%');
+      document.getElementById('p2-hp-fill')?.style.setProperty('width','100%');
+      document.getElementById('p2-en-fill')?.style.setProperty('width','100%');
+
       this.log(`Match gestartet: ${p1.name} vs ${p2.name}`);
     },
 
@@ -219,6 +224,12 @@
           f._hpFill.setSize((w-2)*hpRatio, 4);
           f._hpFill.setFillStyle(color);
         }
+        const side = f.teamId===1?'p1':'p2';
+        const hpEl = document.getElementById(`${side}-hp-fill`);
+        if (hpEl) hpEl.style.width = (hpRatio*100)+'%';
+        const enRatio = Math.max(0, Math.min(1, f.en / f.maxEn));
+        const enEl = document.getElementById(`${side}-en-fill`);
+        if (enEl) enEl.style.width = (enRatio*100)+'%';
       }
 
       // Treffer prüfen
@@ -236,8 +247,8 @@
         if (this._hudWin) this._hudWin.style.display = 'block';
         const fps = this.game.loop.actualFps|0;
         const a = this.fighters[0], b = this.fighters[1];
-        const s1 = a? `${a.id} HP:${a.hp|0}/${a.maxHp} EN:${a.en|0} ${a.state}${a.moveName?`(${a.moveName}:${a.moveFrame})`:''}` : '';
-        const s2 = b? `${b.id} HP:${b.hp|0}/${b.maxHp} EN:${b.en|0} ${b.state}${b.moveName?`(${b.moveName}:${b.moveFrame})`:''}` : '';
+        const s1 = a? `${a.id} HP:${a.hp|0}/${a.maxHp} EN:${a.en|0}/${a.maxEn} ${a.state}${a.moveName?`(${a.moveName}:${a.moveFrame})`:''}` : '';
+        const s2 = b? `${b.id} HP:${b.hp|0}/${b.maxHp} EN:${b.en|0}/${b.maxEn} ${b.state}${b.moveName?`(${b.moveName}:${b.moveFrame})`:''}` : '';
         if (this._hudEl) this._hudEl.textContent = `FPS:${fps}  Mode:${this._mode}  BrythonReady:${window.GameBridge.isBrythonReady()}  Hitstop:${this.feel.hitstopFrames}\n${s1}\n${s2}`;
       },
 

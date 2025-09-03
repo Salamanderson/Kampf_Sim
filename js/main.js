@@ -198,11 +198,28 @@
       stats: {
         maxHp: parseInt(document.getElementById('cc-maxhp').value||'120',10),
         maxEn: parseInt(document.getElementById('cc-maxen').value||'100',10),
-        damageScale: 1.0,
+        physAtk: parseFloat(document.getElementById('cc-physatk').value||'1'),
+        energyAtk: parseFloat(document.getElementById('cc-enatk').value||'1'),
+        attackSpeed: parseFloat(document.getElementById('cc-atkspd').value||'1'),
+        castSpeed: parseFloat(document.getElementById('cc-castspd').value||'1'),
+        channelSpeed: parseFloat(document.getElementById('cc-chanspd').value||'1'),
+        physRange: parseFloat(document.getElementById('cc-physrng').value||'1'),
+        energyRange: parseFloat(document.getElementById('cc-enrng').value||'1'),
         accel: parseFloat(document.getElementById('cc-accel').value||'1800'),
         moveSpeed: parseFloat(document.getElementById('cc-speed').value||'240'),
         dashSpeed: parseFloat(document.getElementById('cc-dash').value||'560'),
-        friction: parseFloat(document.getElementById('cc-fric').value||'0.86')
+        friction: parseFloat(document.getElementById('cc-fric').value||'0.86'),
+        physDef: parseFloat(document.getElementById('cc-physdef').value||'0'),
+        energyDef: parseFloat(document.getElementById('cc-endef').value||'0'),
+        hpRegen: parseFloat(document.getElementById('cc-hpreg').value||'0'),
+        enRegen: parseFloat(document.getElementById('cc-enreg').value||'0'),
+        skillSlots: parseInt(document.getElementById('cc-slots').value||'4',10),
+        special: document.getElementById('cc-special').value || null,
+        statusPower: parseFloat(document.getElementById('cc-stapow').value||'0'),
+        statusDuration: parseFloat(document.getElementById('cc-stadur').value||'1'),
+        statusResist: parseFloat(document.getElementById('cc-stares').value||'0'),
+        statusDurationResist: parseFloat(document.getElementById('cc-stadurres').value||'1'),
+        damageScale: 1.0
       },
       loadout
     };
@@ -219,6 +236,23 @@
     document.getElementById('cc-speed').value = def.stats?.moveSpeed ?? 240;
     document.getElementById('cc-dash').value  = def.stats?.dashSpeed ?? 560;
     document.getElementById('cc-fric').value  = def.stats?.friction ?? 0.86;
+    document.getElementById('cc-physatk').value = def.stats?.physAtk ?? 1;
+    document.getElementById('cc-enatk').value  = def.stats?.energyAtk ?? 1;
+    document.getElementById('cc-atkspd').value = def.stats?.attackSpeed ?? 1;
+    document.getElementById('cc-castspd').value= def.stats?.castSpeed ?? 1;
+    document.getElementById('cc-chanspd').value= def.stats?.channelSpeed ?? 1;
+    document.getElementById('cc-physrng').value= def.stats?.physRange ?? 1;
+    document.getElementById('cc-enrng').value = def.stats?.energyRange ?? 1;
+    document.getElementById('cc-physdef').value= def.stats?.physDef ?? 0;
+    document.getElementById('cc-endef').value = def.stats?.energyDef ?? 0;
+    document.getElementById('cc-hpreg').value = def.stats?.hpRegen ?? 0;
+    document.getElementById('cc-enreg').value = def.stats?.enRegen ?? 0;
+    document.getElementById('cc-slots').value  = def.stats?.skillSlots ?? 4;
+    document.getElementById('cc-special').value= def.stats?.special ?? '';
+    document.getElementById('cc-stapow').value = def.stats?.statusPower ?? 0;
+    document.getElementById('cc-stadur').value = def.stats?.statusDuration ?? 1;
+    document.getElementById('cc-stares').value = def.stats?.statusResist ?? 0;
+    document.getElementById('cc-stadurres').value = def.stats?.statusDurationResist ?? 1;
     const set = new Set(def.loadout||[]);
     document.getElementById('cc-skill-light').checked = set.has('light');
     document.getElementById('cc-skill-heavy').checked = set.has('heavy');
@@ -237,7 +271,18 @@
     const chars = window.GameData.characters || [];
     const def = chars.find(c=>c.id===id) || chars[0] || {
       id:'custom', name:'Custom', shape:'circle', color:0x64c8ff, radius:22,
-      stats:{ maxHp:120, maxEn:100, damageScale:1.0, accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86 },
+      stats:{
+        maxHp:120, maxEn:100,
+        physAtk:1, energyAtk:1,
+        attackSpeed:1, castSpeed:1, channelSpeed:1,
+        physRange:1, energyRange:1,
+        accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86,
+        physDef:0, energyDef:0,
+        hpRegen:0, enRegen:0,
+        skillSlots:4, special:null,
+        statusPower:0, statusDuration:1, statusResist:0, statusDurationResist:1,
+        damageScale:1.0
+      },
       loadout:['light','heavy','spin','heal']
     };
     applyCCDefToForm(def);
@@ -247,8 +292,9 @@
 
     function bindCharCreatorUI(){
     // Eingaben -> Realtime Preview
-    ['cc-name','cc-shape','cc-color','cc-radius','cc-maxhp','cc-maxen','cc-accel','cc-speed','cc-dash','cc-fric',
-     'cc-skill-light','cc-skill-heavy','cc-skill-spin','cc-skill-heal'
+    ['cc-name','cc-shape','cc-color','cc-radius','cc-maxhp','cc-maxen','cc-physatk','cc-enatk','cc-atkspd','cc-castspd','cc-chanspd',
+     'cc-physrng','cc-enrng','cc-accel','cc-speed','cc-dash','cc-fric','cc-physdef','cc-endef','cc-hpreg','cc-enreg','cc-slots','cc-special',
+     'cc-stapow','cc-stadur','cc-stares','cc-stadurres','cc-skill-light','cc-skill-heavy','cc-skill-spin','cc-skill-heal'
     ].forEach(id=>{
       const el = document.getElementById(id);
       el?.addEventListener('input', emitCCUpdate);
@@ -265,7 +311,18 @@
     document.getElementById('cc-new')?.addEventListener('click', ()=>{
       applyCCDefToForm({
         id:'custom', name:'Custom', shape:'circle', color:0x64c8ff, radius:22,
-        stats:{ maxHp:120, maxEn:100, damageScale:1.0, accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86 },
+        stats:{
+          maxHp:120, maxEn:100,
+          physAtk:1, energyAtk:1,
+          attackSpeed:1, castSpeed:1, channelSpeed:1,
+          physRange:1, energyRange:1,
+          accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86,
+          physDef:0, energyDef:0,
+          hpRegen:0, enRegen:0,
+          skillSlots:4, special:null,
+          statusPower:0, statusDuration:1, statusResist:0, statusDurationResist:1,
+          damageScale:1.0
+        },
         loadout:['light','heavy','spin','heal']
       });
       emitCCUpdate();
