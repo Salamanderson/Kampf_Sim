@@ -202,6 +202,9 @@
           y: pos.y,
           controllerProfile: this._uiOpts.p1 || 'aggressive'
         }, def));
+        // Attach UI bars
+        f._uiHpBar = document.getElementById(`t1f${i+1}-hp-fill`);
+        f._uiEnBar = document.getElementById(`t1f${i+1}-en-fill`);
         this.fighters.push(f);
         this._attachHpBar(f);
       }
@@ -218,6 +221,9 @@
           y: pos.y,
           controllerProfile: this._uiOpts.p2 || 'defensive'
         }, def));
+        // Attach UI bars
+        f._uiHpBar = document.getElementById(`t2f${i+1}-hp-fill`);
+        f._uiEnBar = document.getElementById(`t2f${i+1}-en-fill`);
         this.fighters.push(f);
         this._attachHpBar(f);
       }
@@ -279,17 +285,10 @@
           f._hpFill.setFillStyle(color);
         }
 
-        // UI HP/Energy Bars updaten (für alle 4 Fighter)
-        // Mapping: T1_F1 → t1f1, T1_F2 → t1f2, T2_F1 → t2f1, T2_F2 → t2f2
-        const teamPrefix = f.teamId===1 ? 't1' : 't2';
-        const fighterNum = f.id.includes('F1') ? 'f1' : f.id.includes('F2') ? 'f2' : null;
-        if (fighterNum){
-          const hpEl = document.getElementById(`${teamPrefix}${fighterNum}-hp-fill`);
-          if (hpEl) hpEl.style.width = (hpRatio*100)+'%';
-          const enRatio = Math.max(0, Math.min(1, f.en / f.maxEn));
-          const enEl = document.getElementById(`${teamPrefix}${fighterNum}-en-fill`);
-          if (enEl) enEl.style.width = (enRatio*100)+'%';
-        }
+        // UI HP/Energy Bars updaten
+        if (f._uiHpBar) f._uiHpBar.style.width = (hpRatio*100)+'%';
+        const enRatio = Math.max(0, Math.min(1, f.en / f.maxEn));
+        if (f._uiEnBar) f._uiEnBar.style.width = (enRatio*100)+'%';
       }
 
       // Treffer prüfen

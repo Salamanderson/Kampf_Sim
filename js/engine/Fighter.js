@@ -3,10 +3,23 @@
   const TWO_PI = Math.PI * 2;
 
   const defaultMoves = {
-    light: { name:'light', type:'physical', startup:6, active:3, recovery:8,  damage:7,  hitstun:10, hitstop:6,  range:40, radius:20 },
-    heavy: { name:'heavy', type:'physical', startup:10,active:4, recovery:12, damage:12, hitstun:14, hitstop:8,  range:58, radius:24, lunge:80, cd:42 },
-    spin:  { name:'spin',  type:'physical', startup:8, active:6,  recovery:10, damage:9,  hitstun:12, hitstop:8,  range:0,  radius:52, cd:90 },
-    heal:  { name:'heal',  type:'energy',   startup:10,active:0,  recovery:10, heal:18, cost:25,                   cd:120 }
+    // AGGRESSIVE SKILLS (Kreis-Bot, Kreis-Bot Beta)
+    slash: { name:'slash', type:'physical', startup:5, active:3, recovery:7,  damage:8,  hitstun:10, hitstop:5,  range:45, radius:22, color:0xffaa55 },
+    power_strike: { name:'power_strike', type:'physical', startup:12,active:4, recovery:14, damage:18, hitstun:18, hitstop:10, range:60, radius:28, lunge:90, cd:50, color:0xff5555 },
+    whirlwind: { name:'whirlwind', type:'physical', startup:8, active:8,  recovery:12, damage:6,  hitstun:8, hitstop:6,  range:0,  radius:65, cd:80, color:0xffd700, hits:3 },
+    quick_heal: { name:'quick_heal', type:'energy', startup:8,active:0,  recovery:8, heal:15, cost:20, cd:100, color:0x7ad7ff },
+
+    // SUPPORT/TEAMPLAY SKILLS (Dreieck-Bot)
+    poke: { name:'poke', type:'physical', startup:6, active:2, recovery:6,  damage:6,  hitstun:8, hitstop:4,  range:70, radius:18, color:0x88ccff },
+    shield_bash: { name:'shield_bash', type:'physical', startup:10,active:3, recovery:10, damage:10, hitstun:16, hitstop:8, range:50, radius:26, lunge:40, cd:60, knockback:2.5, color:0x5599ff },
+    guard: { name:'guard', type:'energy', startup:6,active:0,  recovery:6, buff:'defense', buffAmount:15, duration:180, cost:30, cd:150, color:0x9999ff },
+    area_heal: { name:'area_heal', type:'energy', startup:12,active:0,  recovery:10, heal:12, cost:35, cd:140, radius:120, isAoE:true, color:0x66ffaa },
+
+    // TANK/BALANCED SKILLS (Quadrat-Bot)
+    punch: { name:'punch', type:'physical', startup:6, active:3, recovery:8,  damage:9,  hitstun:10, hitstop:6,  range:40, radius:20, color:0xffcc66 },
+    ground_slam: { name:'ground_slam', type:'physical', startup:14,active:5, recovery:14, damage:14, hitstun:14, hitstop:9, range:0, radius:70, cd:70, color:0xff9944 },
+    fortify: { name:'fortify', type:'energy', startup:8,active:0,  recovery:8, buff:'fortify', buffAmount:20, duration:240, cost:25, cd:160, color:0xccaa77 },
+    self_heal: { name:'self_heal', type:'energy', startup:10,active:0,  recovery:10, heal:20, cost:25, cd:120, color:0x88ff88 }
   };
 
   const Fighter = function(scene, cfg){
@@ -67,7 +80,10 @@
     this.state = 'idle'; // idle, move, dash, attack_*, hitstun, ko
     this.stateTimer = 0;
     this.moveName = null; this.moveFrame = 0;
-    this.cooldowns = { dash:0, spin:0, heal:0, heavy:0 };
+
+    // Initialize cooldowns for all moves dynamically
+    this.cooldowns = { dash:0 };
+    Object.keys(this.moves).forEach(k => { this.cooldowns[k] = 0; });
 
     // Visual Node
     this.node = this._createNode();
@@ -143,16 +159,42 @@
 
   Fighter.prototype.applyAIAction = function(action){
     if (this.ko) return;
+    // Map generic actions to character-specific skills
     switch(action){
       case 'move_towards': this._accelerateTo(1.0); this.state='move'; break;
       case 'move_away':    this._accelerateTo(-1.0); this.state='move'; break;
       case 'strafe_left':  this._strafe(+1); this.state='move'; break;
       case 'strafe_right': this._strafe(-1); this.state='move'; break;
       case 'dash': this.tryDash(); break;
-      case 'attack_light': this.tryAttack('light'); break;
-      case 'attack_heavy': this.tryAttack('heavy'); break;
-      case 'spin': this.tryAttack('spin'); break;
-      case 'heal': this.tryHeal(); break;
+
+      // Generic attack actions map to character-specific skills
+      case 'attack_light':
+        // Try first skill in loadout (usually light attack)
+        const lightSkill = Object.keys(this.moves)[0];
+        if (lightSkill) this.tryAttack(lightSkill);
+        break;
+      case 'attack_heavy':
+        // Try second skill in loadout (usually heavy attack)
+        const heavySkill = Object.keys(this.moves)[1];
+        if (heavySkill) this.tryAttack(heavySkill);
+        break;
+      case 'spin':
+        // Try third skill in loadout (usually AoE/special)
+        const spinSkill = Object.keys(this.moves)[2];
+        if (spinSkill) this.tryAttack(spinSkill);
+        break;
+      case 'heal':
+        // Try fourth skill in loadout (usually heal/buff)
+        const healSkill = Object.keys(this.moves)[3];
+        if (healSkill) {
+          const move = this.moves[healSkill];
+          if (move.type === 'energy' && !move.damage) {
+            this.tryHeal(healSkill);
+          } else {
+            this.tryAttack(healSkill);
+          }
+        }
+        break;
       default: /* idle */ break;
     }
   };
@@ -189,10 +231,14 @@
     this._vfxTrail();
   };
 
-  Fighter.prototype.tryHeal = function(){
-    const base = this.moves.heal; if (!base) return;
-    if (this.cooldowns.heal>0 || this.state.startsWith('attack_')) return;
+  Fighter.prototype.tryHeal = function(skillName){
+    // Generalisiert für alle Heal-Skills (quick_heal, self_heal, area_heal, etc.)
+    if (!skillName) skillName = 'heal'; // Fallback
+    const base = this.moves[skillName];
+    if (!base) return;
+    if (this.cooldowns[skillName]>0 || this.state.startsWith('attack_')) return;
     if (this.en < (base.cost||0)) return;
+
     const speed = this.stats.castSpeed;
     const m = Object.assign({}, base, {
       startup: Math.max(1, Math.round(base.startup / speed)),
@@ -200,8 +246,11 @@
       heal: (base.heal||0) * this.stats.energyAtk
     });
     this.currentMove = m;
-    this.state = 'attack_heal'; this.moveName='heal'; this.moveFrame=0; this.stateTimer=m.startup + m.recovery;
-    this.scene.events.emit('skill_used', { fighter:this, move:'heal' });
+    this.state = 'attack_'+skillName;
+    this.moveName=skillName;
+    this.moveFrame=0;
+    this.stateTimer=m.startup + m.recovery;
+    this.scene.events.emit('skill_used', { fighter:this, move:skillName });
   };
 
   Fighter.prototype.tryAttack = function(kind){
@@ -269,45 +318,91 @@
     if (this.state.startsWith('attack_')){
       this.moveFrame++; this.stateTimer--;
       const m = this.currentMove || this.moves[this.moveName];
-      if (this.moveName==='heal'){
+
+      // Heal/Buff Skills
+      if (m.type==='energy' && !m.damage){
         if (this.moveFrame===m.startup){
           this.en -= (m.cost||0);
-          const amount = (m.heal||0);
-          this.hp = Math.min(this.maxHp, this.hp + amount);
-          this.cooldowns.heal = (m.cd||120)/60;
-          this.scene.events.emit('heal_used', { fighter:this, amount });
-          this._vfxRing(this.radius+10, 0x7ad7ff);
+
+          // Heal-Skills
+          if (m.heal){
+            const amount = (m.heal||0);
+            if (m.isAoE){
+              // AoE Heal (area_heal)
+              this.hp = Math.min(this.maxHp, this.hp + amount);
+              const allies = this.scene.fighters?.filter(f=>f.teamId===this.teamId && f!==this && !f.ko) || [];
+              for (const ally of allies){
+                const dist = Math.hypot(ally.x-this.x, ally.y-this.y);
+                if (dist <= (m.radius||120)){
+                  ally.hp = Math.min(ally.maxHp, ally.hp + amount);
+                }
+              }
+              this._vfxRing(m.radius||120, m.color||0x66ffaa);
+            } else {
+              // Self Heal
+              this.hp = Math.min(this.maxHp, this.hp + amount);
+              this._vfxRing(this.radius+10, m.color||0x7ad7ff);
+            }
+            this.scene.events.emit('heal_used', { fighter:this, amount });
+          }
+
+          // Buff-Skills (guard, fortify)
+          if (m.buff){
+            // TODO: Implement buffs properly in future iteration
+            this._vfxRing(this.radius+15, m.color||0x9999ff);
+          }
+
+          this.cooldowns[this.moveName] = (m.cd||120)/60;
         }
       } else {
+        // Attack Skills
         const actStart = m.startup + 1, actEnd = m.startup + m.active;
         if (this.moveFrame===m.startup){
-          // VFX zu Begin
-          if (this.moveName==='light') this._vfxSwipe(30, 2, 0xffffff);
-          if (this.moveName==='heavy') this._vfxSwipe(46, 3, 0xffe08a);
-          if (this.moveName==='spin') this._vfxRing(this.radius+12, 0xffd36e);
+          // VFX mit skill-spezifischen Farben
+          const color = m.color || 0xffffff;
+          if (m.range > 0){
+            // Swipe/Slash für ranged attacks
+            const len = m.range * 0.7;
+            const thick = m.radius ? Math.max(2, m.radius/10) : 2;
+            this._vfxSwipe(len, thick, color);
+          } else {
+            // Ring für AoE attacks
+            this._vfxRing((m.radius||40)+8, color);
+          }
         }
+        // Lunge (for power attacks)
+        if (m.lunge && this.moveFrame===m.startup){
+          const t = this._dirToClosest(); this.facingAngle = t.ang;
+          this.vx += Math.cos(t.ang)*m.lunge;
+          this.vy += Math.sin(t.ang)*m.lunge;
+        }
+
+        // Hitbox Registration
         if (this.moveFrame>=actStart && this.moveFrame<=actEnd){
-          // Kreis-Hitbox
           const ang = this.facingAngle;
           const cx = this.x + (m.range? Math.cos(ang)*(this.radius + m.range*0.6) : 0);
           const cy = this.y + (m.range? Math.sin(ang)*(this.radius + m.range*0.6) : 0);
-          const pos = (this.moveName==='spin') ? {x:this.x, y:this.y} : {x:cx, y:cy};
+          const pos = (m.range===0) ? {x:this.x, y:this.y} : {x:cx, y:cy};
+
+          const knockMultiplier = m.knockback || 1.0;
           const hb = {
             shape:'circle', owner:this, kind:this.moveName, type:m.type||'physical',
             x: pos.x, y: pos.y, r: m.radius || 20,
             damage:(m.damage||0)*this.stats.damageScale,
             hitstun:m.hitstun||10, hitstop:m.hitstop||6,
-            knock:{ x: Math.cos(ang)*140, y: Math.sin(ang)*140 }
+            knock:{ x: Math.cos(ang)*140*knockMultiplier, y: Math.sin(ang)*140*knockMultiplier }
           };
           this.scene.hitboxes.register(hb);
+
+          // Multi-hit skills (whirlwind)
+          if (m.hits && this.moveFrame === actStart){
+            this._multiHitCounter = m.hits - 1; // Already registering one hit above
+          }
         }
-        if (this.moveName==='heavy' && this.moveFrame===m.startup){
-          const t = this._dirToClosest(); this.facingAngle = t.ang;
-          this.vx += Math.cos(t.ang)*(m.lunge||0); this.vy += Math.sin(t.ang)*(m.lunge||0);
-          this.cooldowns.heavy = (m.cd||42)/60;
-        }
-        if (this.moveName==='spin' && this.moveFrame===1){
-          this.cooldowns.spin = (m.cd||90)/60;
+
+        // Set cooldown
+        if (this.moveFrame===1 && m.cd){
+          this.cooldowns[this.moveName] = m.cd/60;
         }
       }
       if (this.stateTimer<=0){ this.state='idle'; this.moveName=null; this.moveFrame=0; this.currentMove=null; }
