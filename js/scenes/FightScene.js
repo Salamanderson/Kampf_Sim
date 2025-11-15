@@ -265,6 +265,12 @@
         const allies  = this.fighters.filter(o=>o.teamId===f.teamId && o!==f && !o.ko);
         const snapshot = f.buildAISnapshot(enemies, allies, { arena:A });
         const action = window.GameBridge.getAIAction(f.controllerProfile, snapshot, this._uiOpts.useBrython);
+
+        // DEBUG: Log AI actions every 60 frames (~1 second)
+        if (this.game.loop.frame % 60 === 0 && i === 0) {
+          console.log(`[AI Debug] ${f.id}: action=${action}, state=${f.state}, moves=`, Object.keys(f.moves));
+        }
+
         f.applyAIAction(action);
       }
 
