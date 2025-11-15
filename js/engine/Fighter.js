@@ -122,9 +122,19 @@
       const e = enemies[i]; const d = Math.hypot(e.x-this.x, e.y-this.y);
       if (d<dmin){ dmin=d; closest=e; }
     }
+
+    // Find closest ally
+    let closestAlly=null, aminDist=1e9;
+    for (let i=0;i<allies.length;i++){
+      const a = allies[i]; const d = Math.hypot(a.x-this.x, a.y-this.y);
+      if (d<aminDist){ aminDist=d; closestAlly=a; }
+    }
+
     return {
       self: { id:this.id, teamId:this.teamId, x:this.x, y:this.y, vx:this.vx, vy:this.vy, hp:this.hp, maxHp:this.maxHp, en:this.en, maxEn:this.maxEn, state:this.state },
       closestEnemy: closest ? { id:closest.id, x:closest.x, y:closest.y, hp:closest.hp } : null,
+      closestAlly: closestAlly ? { id:closestAlly.id, x:closestAlly.x, y:closestAlly.y, hp:closestAlly.hp, dist:aminDist } : null,
+      personality: this.personality,
       cooldowns: Object.assign({}, this.cooldowns),
       env: { arena: env.arena },
       frame: (this.scene.game.loop.frame|0)
