@@ -25,29 +25,140 @@
     return jsFallbackAI(profileId, stateObj);
   };
 
-  // Fallback-KI
+  // Tactical AI System with scoring
+  function evaluateAction(action, me, enemy, dist, cds, profile){
+    let score = 0;
+    const myHpPct = me.hp / me.maxHp;
+    const enemyHpPct = enemy.hp / me.maxHp; // Using me.maxHp as baseline
+    const inCombatRange = dist < 100;
+    const inAttackRange = dist < 80;
+    const isAggressive = profile === 'aggressive';
+    const isDefensive = profile === 'defensive';
+
+    switch(action){
+      case 'heal':
+        if (cds.heal > 0) return -1000; // Can't use
+        if (me.en < 25) return -1000; // Not enough energy
+        // Heal priority based on HP
+        if (myHpPct < 0.25) score = 1000; // Critical HP - highest priority
+        else if (myHpPct < 0.40) score = 600; // Low HP - high priority
+        else if (myHpPct < 0.60) score = 300; // Medium HP - moderate priority
+        else score = -500; // High HP - don't waste
+        // Defensive AI heals more aggressively
+        if (isDefensive) score *= 1.3;
+        // Don't heal if enemy is very close and can punish
+        if (inAttackRange) score -= 400;
+        break;
+
+      case 'dash':
+        if (cds.dash > 0) return -1000; // Can't use
+        // Dash to close distance
+        if (dist > 200) score = 400;
+        else if (dist > 150) score = 200;
+        else score = -200; // Too close for dash
+        // Aggressive uses dash more
+        if (isAggressive) score *= 1.5;
+        break;
+
+      case 'spin':
+        if (cds.spin > 0) return -1000; // Can't use
+        // Spin is best when enemy is very close (AoE around self)
+        if (dist < 60) score = 800; // Perfect range
+        else if (dist < 100) score = 400; // Good range
+        else if (dist < 140) score = 100; // Okay range
+        else score = -500; // Too far
+        // Bonus if low HP (desperation move)
+        if (myHpPct < 0.3) score += 200;
+        break;
+
+      case 'attack_heavy':
+        if (cds.heavy > 0) return -1000; // Can't use
+        // Heavy is good for burst damage at medium range
+        if (dist < 70) score = 600; // Good range
+        else if (dist < 110) score = 400; // Acceptable
+        else score = -200; // Too far
+        // Use heavy to finish low HP enemies
+        if (enemyHpPct < 0.3) score += 400;
+        // Aggressive uses heavy more
+        if (isAggressive) score *= 1.3;
+        break;
+
+      case 'attack_light':
+        // Light attack is always available, safe poke
+        if (dist < 60) score = 500; // Close range
+        else if (dist < 90) score = 400; // Good range
+        else if (dist < 120) score = 200; // Max range
+        else score = -100; // Too far
+        // Safe option for defensive
+        if (isDefensive) score *= 1.2;
+        break;
+
+      case 'move_towards':
+        // Approach if out of range
+        if (dist > 150) score = 500;
+        else if (dist > 100) score = 300;
+        else score = 50; // Already close
+        // Aggressive approaches more
+        if (isAggressive) score *= 1.4;
+        // Don't approach if low HP
+        if (myHpPct < 0.3) score -= 300;
+        break;
+
+      case 'move_away':
+        // Retreat when low HP or too close
+        if (myHpPct < 0.3) score = 600; // Low HP - retreat
+        else if (dist < 60) score = 400; // Too close
+        else if (dist < 100) score = 200; // Close
+        else score = -200; // Don't retreat if far
+        // Defensive retreats more
+        if (isDefensive) score *= 1.5;
+        break;
+
+      case 'strafe_left':
+      case 'strafe_right':
+        // Strafe for repositioning at medium range
+        if (dist > 80 && dist < 160) score = 300;
+        else if (dist < 80) score = 400; // Dodge at close range
+        else score = 100;
+        // Defensive strafes more
+        if (isDefensive) score *= 1.3;
+        break;
+
+      case 'idle':
+        score = -100; // Generally don't idle
+        break;
+    }
+
+    return score;
+  }
+
   function jsFallbackAI(profileId, s){
     const me = s.self, e = s.closestEnemy;
     if (!e) return 'idle';
     const dx = e.x - me.x, dy = e.y - me.y;
     const dist = Math.hypot(dx, dy);
+    const cds = s.cooldowns;
 
-    if (me.hp < me.maxHp*0.35 && s.cooldowns.heal <= 0) return 'heal';
+    // Evaluate all possible actions
+    const actions = ['heal', 'dash', 'spin', 'attack_heavy', 'attack_light',
+                     'move_towards', 'move_away', 'strafe_left', 'strafe_right'];
 
-    if (profileId === 'aggressive'){
-      if (dist > 220) return 'move_towards';
-      if (dist > 140 && Math.random()<0.35) return 'dash';
-      if (dist < 90 && Math.random()<0.35) return 'spin';
-      return Math.random()<0.6 ? 'attack_light' : 'attack_heavy';
+    let bestAction = 'idle';
+    let bestScore = -Infinity;
+
+    for (const action of actions){
+      let score = evaluateAction(action, me, e, dist, cds, profileId);
+      // Add small random variation (±10%) for dynamic behavior
+      if (score > -1000){
+        score *= (0.95 + Math.random() * 0.1);
+      }
+      if (score > bestScore){
+        bestScore = score;
+        bestAction = action;
+      }
     }
-    if (profileId === 'defensive'){
-      if (dist < 120 && Math.random()<0.4) return (Math.random()<0.5)?'strafe_left':'strafe_right';
-      if (dist < 140) return 'move_away';
-      if (dist > 220 && Math.random()<0.25) return 'dash';
-      return 'attack_light';
-    }
-    const acts = ['move_towards','move_away','strafe_left','strafe_right','dash','attack_light','attack_heavy','spin','heal','idle'];
-    return acts[(Math.random()*acts.length)|0];
+
+    return bestAction;
   }
 
   // ----- Phaser Config -----

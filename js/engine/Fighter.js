@@ -3,10 +3,10 @@
   const TWO_PI = Math.PI * 2;
 
   const defaultMoves = {
-    light: { name:'light', startup:6, active:3, recovery:8,  damage:7,  hitstun:10, hitstop:6,  range:40, radius:20 },
-    heavy: { name:'heavy', startup:10,active:4, recovery:12, damage:12, hitstun:14, hitstop:8,  range:58, radius:24, lunge:80, cd:42 },
-    spin:  { name:'spin',  startup:8, active:6,  recovery:10, damage:9,  hitstun:12, hitstop:8,  range:0,  radius:52, cd:90 },
-    heal:  { name:'heal',  startup:10,active:0,  recovery:10, heal:18, cost:25,                   cd:120 }
+    light: { name:'light', startup:6, active:3, recovery:8,  damage:7,  hitstun:10, hitstop:6,  range:40, radius:20, cd:18 },
+    heavy: { name:'heavy', startup:10,active:4, recovery:12, damage:15, hitstun:16, hitstop:9,  range:58, radius:24, lunge:80, cd:50 },
+    spin:  { name:'spin',  startup:8, active:6,  recovery:10, damage:10, hitstun:13, hitstop:8,  range:0,  radius:52, cd:100 },
+    heal:  { name:'heal',  startup:10,active:0,  recovery:10, heal:22, cost:25,                   cd:150 }
   };
 
   const Fighter = function(scene, cfg){
@@ -40,7 +40,8 @@
     this.state = 'idle'; // idle, move, dash, attack_*, hitstun, ko
     this.stateTimer = 0;
     this.moveName = null; this.moveFrame = 0;
-    this.cooldowns = { dash:0, spin:0, heal:0, heavy:0 };
+    this.cooldowns = { dash:0, light:0, heavy:0, spin:0, heal:0 };
+    this.hitThisSkill = new Set(); // Track enemies hit by current skill
 
     // Visual Node
     this.node = this._createNode();
@@ -157,6 +158,7 @@
     if (this.cooldowns.heal>0 || this.state.startsWith('attack_')) return;
     if (this.en < (this.moves.heal.cost||0)) return;
     this.state = 'attack_heal'; this.moveName='heal'; this.moveFrame=0; this.stateTimer=this.moves.heal.startup+this.moves.heal.recovery;
+    this.hitThisSkill.clear();
     this.scene.events.emit('skill_used', { fighter:this, move:'heal' });
   };
 
@@ -166,6 +168,7 @@
     if (this.state.startsWith('attack_')) return;
     if (m.cd && this.cooldowns[kind]>0) return;
     this.state = 'attack_'+kind; this.moveName = kind; this.moveFrame=0; this.stateTimer = m.startup + (m.active||0) + m.recovery;
+    this.hitThisSkill.clear();
     this.scene.events.emit('skill_used', { fighter:this, move:kind });
   };
 
@@ -221,7 +224,10 @@
         const actStart = m.startup + 1, actEnd = m.startup + m.active;
         if (this.moveFrame===m.startup){
           // VFX zu Begin
-          if (this.moveName==='light') this._vfxSwipe(30, 2, 0xffffff);
+          if (this.moveName==='light'){
+            this._vfxSwipe(30, 2, 0xffffff);
+            this.cooldowns.light = (m.cd||18)/60;
+          }
           if (this.moveName==='heavy') this._vfxSwipe(46, 3, 0xffe08a);
           if (this.moveName==='spin') this._vfxRing(this.radius+12, 0xffd36e);
         }

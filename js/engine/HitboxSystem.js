@@ -22,9 +22,13 @@
       for (let j=0;j<fighters.length;j++){
         const f = fighters[j];
         if (f===o || f.teamId===o.teamId || f.ko) continue;
+        // Skip if already hit by this skill activation
+        if (o.hitThisSkill && o.hitThisSkill.has(f.id)) continue;
         if (circleOverlap(hb, f.hurt)){
           // Treffer!
           f.receiveHit(hb);
+          // Mark as hit
+          if (o.hitThisSkill) o.hitThisSkill.add(f.id);
           // Feedback
           this.scene.cameras.main.shake(60, 0.002);
           this.scene.feel.hitstop(hb.hitstop || 6);
