@@ -16,6 +16,21 @@
     this.teamId = cfg.teamId || 1;
     this.controllerProfile = cfg.controllerProfile || 'aggressive';
 
+    // Progression System
+    this.level = cfg.level || 1;
+    this.xp = cfg.xp || 0;
+    this.xpToNext = this._calculateXpToNext(this.level);
+
+    // Personality (for AI behavior)
+    const defaultPersonality = { aggression:5, teamplay:5, riskTaking:5, positioning:5, energyManagement:5 };
+    this.personality = Object.assign({}, defaultPersonality, cfg.personality||{});
+
+    // Items (3 slots)
+    this.items = cfg.items && Array.isArray(cfg.items) ? cfg.items.slice(0, 3) : [];
+
+    // Training Points
+    this.trainingPoints = cfg.trainingPoints || 0;
+
     // Geometrie / Visual
     this.shape = cfg.shape || 'circle'; // circle | square | triangle
     this.color = (typeof cfg.color === 'number') ? cfg.color : 0x7fb2ff;
@@ -331,6 +346,49 @@
     this.vx += h.knock.x*0.02; this.vy += h.knock.y*0.02;
     this.state = 'hitstun'; this.stateTimer = h.hitstun;
     if (this.node.setAlpha) { this.node.setAlpha(0.9); setTimeout(()=>this.node&&this.node.setAlpha(1), 60); }
+  };
+
+  // Progression Helpers
+  Fighter.prototype._calculateXpToNext = function(level){
+    return Math.floor(100 + (level * 50)); // 100, 150, 200, 250...
+  };
+
+  Fighter.prototype.addXp = function(amount){
+    this.xp += amount;
+    while (this.xp >= this.xpToNext){
+      this.xp -= this.xpToNext;
+      this.levelUp();
+    }
+  };
+
+  Fighter.prototype.levelUp = function(){
+    this.level++;
+    this.xpToNext = this._calculateXpToNext(this.level);
+    // Stat gains per level
+    this.stats.maxHp += 5;
+    this.stats.maxEn += 3;
+    this.stats.physAtk += 0.05;
+    this.stats.energyAtk += 0.05;
+    this.stats.moveSpeed += 2;
+    this.maxHp = this.stats.maxHp;
+    this.maxEn = this.stats.maxEn;
+    this.hp = this.maxHp; // Full heal on level up
+    this.en = this.maxEn;
+  };
+
+  // Item System Helpers
+  Fighter.prototype.getEffectiveStats = function(){
+    const stats = Object.assign({}, this.stats);
+    // Apply item bonuses
+    for (let i=0; i<this.items.length; i++){
+      const item = this.items[i];
+      if (item && item.statBonus){
+        for (const key of Object.keys(item.statBonus)){
+          stats[key] = (stats[key]||0) + item.statBonus[key];
+        }
+      }
+    }
+    return stats;
   };
 
   window.Engine.Fighter = Fighter;

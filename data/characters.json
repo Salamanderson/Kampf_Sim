@@ -7,7 +7,18 @@
       "shape": "circle",
       "color": 6612095,
       "radius": 22,
-        "stats": { "maxHp": 120, "maxEn": 100, "physAtk":1, "energyAtk":1, "attackSpeed":1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1900, "moveSpeed": 250, "dashSpeed": 580, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "level": 1,
+      "xp": 0,
+      "trainingPoints": 0,
+      "personality": {
+        "aggression": 7,
+        "teamplay": 4,
+        "riskTaking": 6,
+        "positioning": 5,
+        "energyManagement": 5
+      },
+      "items": [],
+      "stats": { "maxHp": 120, "maxEn": 100, "physAtk":1, "energyAtk":1, "attackSpeed":1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1900, "moveSpeed": 250, "dashSpeed": 580, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
       "loadout": ["light","heavy","spin","heal"]
     },
     {
@@ -16,7 +27,58 @@
       "shape": "triangle",
       "color": 16746442,
       "radius": 24,
-        "stats": { "maxHp": 110, "maxEn": 100, "physAtk":1, "energyAtk":1, "attackSpeed":1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1850, "moveSpeed": 245, "dashSpeed": 560, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "level": 1,
+      "xp": 0,
+      "trainingPoints": 0,
+      "personality": {
+        "aggression": 4,
+        "teamplay": 7,
+        "riskTaking": 3,
+        "positioning": 7,
+        "energyManagement": 6
+      },
+      "items": [],
+      "stats": { "maxHp": 110, "maxEn": 100, "physAtk":1, "energyAtk":1, "attackSpeed":1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1850, "moveSpeed": 245, "dashSpeed": 560, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "loadout": ["light","heavy","spin","heal"]
+    },
+    {
+      "id": "square_bot",
+      "name": "Quadrat-Bot",
+      "shape": "square",
+      "color": 5570815,
+      "radius": 20,
+      "level": 1,
+      "xp": 0,
+      "trainingPoints": 0,
+      "personality": {
+        "aggression": 5,
+        "teamplay": 6,
+        "riskTaking": 5,
+        "positioning": 6,
+        "energyManagement": 7
+      },
+      "items": [],
+      "stats": { "maxHp": 130, "maxEn": 90, "physAtk":1.1, "energyAtk":0.9, "attackSpeed":0.9, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1750, "moveSpeed": 235, "dashSpeed": 540, "friction": 0.86, "physDef":5, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "loadout": ["light","heavy","spin","heal"]
+    },
+    {
+      "id": "circle_bot_2",
+      "name": "Kreis-Bot Beta",
+      "shape": "circle",
+      "color": 16737434,
+      "radius": 22,
+      "level": 1,
+      "xp": 0,
+      "trainingPoints": 0,
+      "personality": {
+        "aggression": 8,
+        "teamplay": 3,
+        "riskTaking": 8,
+        "positioning": 4,
+        "energyManagement": 4
+      },
+      "items": [],
+      "stats": { "maxHp": 115, "maxEn": 105, "physAtk":1.05, "energyAtk":1.05, "attackSpeed":1.1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 2000, "moveSpeed": 260, "dashSpeed": 600, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
       "loadout": ["light","heavy","spin","heal"]
     }
   ]
