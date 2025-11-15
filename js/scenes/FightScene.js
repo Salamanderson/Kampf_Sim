@@ -195,13 +195,13 @@
       for (let i=0; i<team1Roster.length; i++){
         const def = team1Roster[i];
         const pos = team1Positions[i];
-        const f = new Fighter(this, Object.assign({
+        const f = new Fighter(this, Object.assign({}, def, {
           id: `T1_F${i+1}`,
           teamId: 1,
           x: pos.x,
           y: pos.y,
           controllerProfile: this._uiOpts.p1 || 'aggressive'
-        }, def));
+        }));
         // Attach UI bars
         f._uiHpBar = document.getElementById(`t1f${i+1}-hp-fill`);
         f._uiEnBar = document.getElementById(`t1f${i+1}-en-fill`);
@@ -214,13 +214,13 @@
       for (let i=0; i<team2Roster.length; i++){
         const def = team2Roster[i];
         const pos = team2Positions[i];
-        const f = new Fighter(this, Object.assign({
+        const f = new Fighter(this, Object.assign({}, def, {
           id: `T2_F${i+1}`,
           teamId: 2,
           x: pos.x,
           y: pos.y,
           controllerProfile: this._uiOpts.p2 || 'defensive'
-        }, def));
+        }));
         // Attach UI bars
         f._uiHpBar = document.getElementById(`t2f${i+1}-hp-fill`);
         f._uiEnBar = document.getElementById(`t2f${i+1}-en-fill`);
