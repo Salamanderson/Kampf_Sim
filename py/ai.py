@@ -65,7 +65,6 @@ def decide_personality(state):
     enemy = state.get("closestEnemy")
     ally = state.get("closestAlly")
     personality = state.get("personality", {})
-    cds = state.get("cooldowns", {})
 
     # Traits extrahieren (Defaults: 5)
     aggression = personality.get("aggression", 5)
@@ -82,23 +81,19 @@ def decide_personality(state):
     en_ratio = me["en"] / me["maxEn"]
 
     # === ENERGY MANAGEMENT ===
-    # Hoher energy_mgmt (7+) → Energie sparen, nur wenn genug da
-    energy_threshold = 0.3 + (energy_mgmt / 30.0)  # 0.53 bei 7, 0.63 bei 10
+    energy_threshold = 0.3 + (energy_mgmt / 30.0)
     low_energy = en_ratio < energy_threshold
 
     # === HEAL DECISION ===
-    # Risk-Taking beeinflusst wann heilen: Low risk = früher heilen
-    heal_threshold = 0.5 - (risk_taking / 40.0)  # 0.325 bei risk=3, 0.3 bei risk=8
-    if hp_ratio < heal_threshold and cds.get("heal", 0) <= 0 and en_ratio > 0.25:
+    # WICHTIG: Keine Cooldown-Checks hier! tryHeal() macht das.
+    heal_threshold = 0.5 - (risk_taking / 40.0)
+    if hp_ratio < heal_threshold and en_ratio > 0.25:
         return "heal"
 
     # === TEAMPLAY: Bei Ally bleiben ===
-    # Hoher Teamplay (7+) → In Nähe von Ally bleiben
     if teamplay >= 7 and ally:
         ally_dist = ally.get("dist", 999)
-        # Wenn Ally zu weit weg (>150), bewege dich zu Ally
         if ally_dist > 150 and random.random() < (teamplay / 15.0):
-            # Bewege zu Ally statt zu Enemy
             ally_dx = ally["x"] - me["x"]
             ally_dy = ally["y"] - me["y"]
             if abs(ally_dx) > abs(ally_dy):
@@ -107,57 +102,52 @@ def decide_personality(state):
                 return "move_towards" if ally_dy < 0 else "move_away"
 
     # === AGGRESSION: Angriffs-Frequenz ===
-    # Aggression bestimmt wie nah man ran geht und wie oft man angreift
-    attack_range = 100 + (aggression * 15)  # 205 bei agg=7, 220 bei agg=8
-    safe_distance = 180 - (aggression * 10)  # 110 bei agg=7, 100 bei agg=8
+    attack_range = 100 + (aggression * 15)
+    safe_distance = 180 - (aggression * 10)
 
     # === POSITIONING: Strategische Distanz ===
-    # Hoher positioning (7+) → Optimale Distanz halten (nicht zu nah, nicht zu weit)
     if positioning >= 7:
         optimal_dist = 140
         if dist < optimal_dist - 40:
-            # Zu nah, etwas zurück
             if random.random() < 0.4:
                 return "move_away"
         elif dist > optimal_dist + 60:
-            # Zu weit, annähern
             if random.random() < 0.5:
                 return "move_towards"
 
     # === DASH (Risk-Taking) ===
-    # Hoher Risk-Taking → Nutzt Dash öfter für aggressive Einstiege
-    dash_chance = 0.3 + (risk_taking / 20.0)  # 0.7 bei risk=8
-    if dist > 200 and cds.get("dash", 0) <= 0 and random.random() < dash_chance:
+    # Dash hat eigenen Cooldown im Fighter - kein Check nötig
+    dash_chance = 0.3 + (risk_taking / 20.0)
+    if dist > 200 and random.random() < dash_chance:
         return "dash"
 
-    # === SPIN (Close Range AoE) ===
-    # Aggression + Risk-Taking → Spin häufiger nutzen
-    spin_chance = (aggression + risk_taking) / 35.0  # 0.457 bei agg=8,risk=8
-    if dist < 100 and cds.get("spin", 0) <= 0 and random.random() < spin_chance:
+    # === SPIN/AOE (Close Range) ===
+    # WICHTIG: Keine Cooldown-Checks! tryAttack() macht das.
+    spin_chance = (aggression + risk_taking) / 35.0
+    if dist < 100 and random.random() < spin_chance:
         return "spin"
 
     # === ATTACK DECISION ===
     if dist <= attack_range:
-        # Hohe Aggression → Heavy häufiger
-        heavy_chance = aggression / 25.0  # 0.28 bei agg=7, 0.32 bei agg=8
+        heavy_chance = aggression / 25.0
 
         # Energy Management: Wenn low energy, nur Light
         if low_energy:
             return "attack_light"
 
         # Heavy oder Light basierend auf Aggression
-        if cds.get("heavy", 0) <= 0 and random.random() < heavy_chance:
+        # Keine Cooldown-Checks - tryAttack() macht das
+        if random.random() < heavy_chance:
             return "attack_heavy"
         else:
             return "attack_light"
 
     # === MOVEMENT ===
-    # Niedrige Aggression (<=4) → Mehr ausweichen
     if aggression <= 4 and dist < safe_distance:
         return random.choice(["move_away", "strafe_left", "strafe_right", "move_away"])
 
     # Default: Annähern mit etwas Kreisen
-    moves = ["move_towards"] * (aggression // 2)  # Mehr move_towards bei hoher Aggression
+    moves = ["move_towards"] * (aggression // 2)
     moves += ["strafe_left", "strafe_right"]
     return random.choice(moves)
 

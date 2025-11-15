@@ -1,4 +1,3 @@
-// FILE: data/characters.json
 {
   "characters": [
     {
@@ -18,8 +17,8 @@
         "energyManagement": 5
       },
       "items": [],
-      "stats": { "maxHp": 120, "maxEn": 100, "physAtk":1, "energyAtk":1, "attackSpeed":1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1900, "moveSpeed": 250, "dashSpeed": 580, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
-      "loadout": ["light","heavy","spin","heal"]
+      "stats": { "maxHp": 120, "maxEn": 100, "physAtk":1.1, "energyAtk":1, "attackSpeed":1.1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1900, "moveSpeed": 250, "dashSpeed": 580, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "loadout": ["slash","power_strike","whirlwind","quick_heal"]
     },
     {
       "id": "triangle_bot",
@@ -38,8 +37,8 @@
         "energyManagement": 6
       },
       "items": [],
-      "stats": { "maxHp": 110, "maxEn": 100, "physAtk":1, "energyAtk":1, "attackSpeed":1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1850, "moveSpeed": 245, "dashSpeed": 560, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
-      "loadout": ["light","heavy","spin","heal"]
+      "stats": { "maxHp": 110, "maxEn": 110, "physAtk":0.9, "energyAtk":1.2, "attackSpeed":1, "castSpeed":1.2, "channelSpeed":1, "physRange":1.2, "energyRange":1.3, "accel": 1850, "moveSpeed": 245, "dashSpeed": 560, "friction": 0.86, "physDef":0, "energyDef":5, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "loadout": ["poke","shield_bash","guard","area_heal"]
     },
     {
       "id": "square_bot",
@@ -58,8 +57,8 @@
         "energyManagement": 7
       },
       "items": [],
-      "stats": { "maxHp": 130, "maxEn": 90, "physAtk":1.1, "energyAtk":0.9, "attackSpeed":0.9, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1750, "moveSpeed": 235, "dashSpeed": 540, "friction": 0.86, "physDef":5, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
-      "loadout": ["light","heavy","spin","heal"]
+      "stats": { "maxHp": 140, "maxEn": 95, "physAtk":1.1, "energyAtk":0.9, "attackSpeed":0.9, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1750, "moveSpeed": 235, "dashSpeed": 540, "friction": 0.86, "physDef":10, "energyDef":5, "hpRegen":0.5, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "loadout": ["punch","ground_slam","fortify","self_heal"]
     },
     {
       "id": "circle_bot_2",
@@ -78,8 +77,8 @@
         "energyManagement": 4
       },
       "items": [],
-      "stats": { "maxHp": 115, "maxEn": 105, "physAtk":1.05, "energyAtk":1.05, "attackSpeed":1.1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 2000, "moveSpeed": 260, "dashSpeed": 600, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
-      "loadout": ["light","heavy","spin","heal"]
+      "stats": { "maxHp": 115, "maxEn": 105, "physAtk":1.15, "energyAtk":1.05, "attackSpeed":1.2, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 2000, "moveSpeed": 260, "dashSpeed": 600, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "loadout": ["slash","power_strike","whirlwind","quick_heal"]
     }
   ]
 }

@@ -158,6 +158,7 @@
 
       // Charaktere laden
       const chars = (window.GameData && window.GameData.characters) ? window.GameData.characters : [];
+      console.log('[FightScene] Loaded characters:', chars.length, chars);
 
       // Team Setup (für jetzt: 2v2 mit fest definierten Teams)
       const { Team } = window.Engine;
@@ -167,6 +168,7 @@
         chars.find(c=>c.id==='circle_bot') || chars[0],
         chars.find(c=>c.id==='triangle_bot') || chars[1] || chars[0]
       ];
+      console.log('[FightScene] Team 1 roster:', team1Roster);
       this.team1 = new Team({
         id: 'team_1',
         name: 'Team Blue',
@@ -180,6 +182,7 @@
         chars.find(c=>c.id==='square_bot') || chars[2] || chars[0],
         chars.find(c=>c.id==='circle_bot_2') || chars[3] || chars[0]
       ];
+      console.log('[FightScene] Team 2 roster:', team2Roster);
       this.team2 = new Team({
         id: 'team_2',
         name: 'Team Red',
@@ -195,13 +198,18 @@
       for (let i=0; i<team1Roster.length; i++){
         const def = team1Roster[i];
         const pos = team1Positions[i];
-        const f = new Fighter(this, Object.assign({
+        console.log('[FightScene] Creating Team 1 Fighter', i+1, 'def=', def, 'loadout=', def?.loadout);
+        const f = new Fighter(this, Object.assign({}, def, {
           id: `T1_F${i+1}`,
           teamId: 1,
           x: pos.x,
           y: pos.y,
           controllerProfile: this._uiOpts.p1 || 'aggressive'
-        }, def));
+        }));
+        console.log('[FightScene] Fighter created, moves=', Object.keys(f.moves));
+        // Attach UI bars
+        f._uiHpBar = document.getElementById(`t1f${i+1}-hp-fill`);
+        f._uiEnBar = document.getElementById(`t1f${i+1}-en-fill`);
         this.fighters.push(f);
         this._attachHpBar(f);
       }
@@ -211,13 +219,16 @@
       for (let i=0; i<team2Roster.length; i++){
         const def = team2Roster[i];
         const pos = team2Positions[i];
-        const f = new Fighter(this, Object.assign({
+        const f = new Fighter(this, Object.assign({}, def, {
           id: `T2_F${i+1}`,
           teamId: 2,
           x: pos.x,
           y: pos.y,
           controllerProfile: this._uiOpts.p2 || 'defensive'
-        }, def));
+        }));
+        // Attach UI bars
+        f._uiHpBar = document.getElementById(`t2f${i+1}-hp-fill`);
+        f._uiEnBar = document.getElementById(`t2f${i+1}-en-fill`);
         this.fighters.push(f);
         this._attachHpBar(f);
       }
@@ -259,6 +270,12 @@
         const allies  = this.fighters.filter(o=>o.teamId===f.teamId && o!==f && !o.ko);
         const snapshot = f.buildAISnapshot(enemies, allies, { arena:A });
         const action = window.GameBridge.getAIAction(f.controllerProfile, snapshot, this._uiOpts.useBrython);
+
+        // DEBUG: Log AI actions every 60 frames (~1 second)
+        if (this.game.loop.frame % 60 === 0 && i === 0) {
+          console.log(`[AI Debug] ${f.id}: action=${action}, state=${f.state}, moves=`, Object.keys(f.moves));
+        }
+
         f.applyAIAction(action);
       }
 
@@ -279,17 +296,10 @@
           f._hpFill.setFillStyle(color);
         }
 
-        // UI HP/Energy Bars updaten (für alle 4 Fighter)
-        // Mapping: T1_F1 → t1f1, T1_F2 → t1f2, T2_F1 → t2f1, T2_F2 → t2f2
-        const teamPrefix = f.teamId===1 ? 't1' : 't2';
-        const fighterNum = f.id.includes('F1') ? 'f1' : f.id.includes('F2') ? 'f2' : null;
-        if (fighterNum){
-          const hpEl = document.getElementById(`${teamPrefix}${fighterNum}-hp-fill`);
-          if (hpEl) hpEl.style.width = (hpRatio*100)+'%';
-          const enRatio = Math.max(0, Math.min(1, f.en / f.maxEn));
-          const enEl = document.getElementById(`${teamPrefix}${fighterNum}-en-fill`);
-          if (enEl) enEl.style.width = (enRatio*100)+'%';
-        }
+        // UI HP/Energy Bars updaten
+        if (f._uiHpBar) f._uiHpBar.style.width = (hpRatio*100)+'%';
+        const enRatio = Math.max(0, Math.min(1, f.en / f.maxEn));
+        if (f._uiEnBar) f._uiEnBar.style.width = (enRatio*100)+'%';
       }
 
       // Treffer prüfen
