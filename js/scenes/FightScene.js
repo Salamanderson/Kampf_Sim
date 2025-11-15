@@ -29,6 +29,7 @@
       this._mode = 'simulator'; // simulator | story | char_creator | skill_creator | ai_creator
       this._paused = false;
       this._ccPreview = null;
+      this._matchEnded = false;
     },
 
     create: function(){
@@ -153,32 +154,80 @@
       // Aufräumen
       if (this.fighters){ this.fighters.forEach(f=>{ f._hpBg?.destroy(); f._hpFill?.destroy(); f.destroy(); }); }
       this.fighters = [];
+      this._matchEnded = false;
 
       // Charaktere laden
       const chars = (window.GameData && window.GameData.characters) ? window.GameData.characters : [];
-      const p1def = chars.find(c=>c.id===this._uiOpts.p1CharId) || chars[0];
-      const p2def = chars.find(c=>c.id===this._uiOpts.p2CharId) || chars[1] || chars[0];
 
-      // Fighter
+      // Team Setup (für jetzt: 2v2 mit fest definierten Teams)
+      const { Team } = window.Engine;
+
+      // Team 1 (Blue)
+      const team1Roster = [
+        chars.find(c=>c.id==='circle_bot') || chars[0],
+        chars.find(c=>c.id==='triangle_bot') || chars[1] || chars[0]
+      ];
+      this.team1 = new Team({
+        id: 'team_1',
+        name: 'Team Blue',
+        color: 0x00aaff,
+        roster: team1Roster,
+        formation: 'line'
+      });
+
+      // Team 2 (Red)
+      const team2Roster = [
+        chars.find(c=>c.id==='square_bot') || chars[2] || chars[0],
+        chars.find(c=>c.id==='circle_bot_2') || chars[3] || chars[0]
+      ];
+      this.team2 = new Team({
+        id: 'team_2',
+        name: 'Team Red',
+        color: 0xff6b35,
+        roster: team2Roster,
+        formation: 'line'
+      });
+
       const A = this.arena;
-      const p1 = new Fighter(this, Object.assign({
-        id:'P1', teamId:1, x: A.x - A.w*0.25, y: A.y, controllerProfile:this._uiOpts.p1
-      }, p1def||{}));
-      const p2 = new Fighter(this, Object.assign({
-        id:'P2', teamId:2, x: A.x + A.w*0.25, y: A.y, controllerProfile:this._uiOpts.p2
-      }, p2def||{}));
-      this.fighters.push(p1,p2);
 
-      // HP-Balken
-      this._attachHpBar(p1);
-      this._attachHpBar(p2);
+      // Create Team 1 Fighters
+      const team1Positions = this.team1.getFormationPositions(team1Roster.length, A, 'left');
+      for (let i=0; i<team1Roster.length; i++){
+        const def = team1Roster[i];
+        const pos = team1Positions[i];
+        const f = new Fighter(this, Object.assign({
+          id: `T1_F${i+1}`,
+          teamId: 1,
+          x: pos.x,
+          y: pos.y,
+          controllerProfile: this._uiOpts.p1 || 'aggressive'
+        }, def));
+        this.fighters.push(f);
+        this._attachHpBar(f);
+      }
+
+      // Create Team 2 Fighters
+      const team2Positions = this.team2.getFormationPositions(team2Roster.length, A, 'right');
+      for (let i=0; i<team2Roster.length; i++){
+        const def = team2Roster[i];
+        const pos = team2Positions[i];
+        const f = new Fighter(this, Object.assign({
+          id: `T2_F${i+1}`,
+          teamId: 2,
+          x: pos.x,
+          y: pos.y,
+          controllerProfile: this._uiOpts.p2 || 'defensive'
+        }, def));
+        this.fighters.push(f);
+        this._attachHpBar(f);
+      }
 
       document.getElementById('p1-hp-fill')?.style.setProperty('width','100%');
       document.getElementById('p1-en-fill')?.style.setProperty('width','100%');
       document.getElementById('p2-hp-fill')?.style.setProperty('width','100%');
       document.getElementById('p2-en-fill')?.style.setProperty('width','100%');
 
-      this.log(`Match gestartet: ${p1.name} vs ${p2.name}`);
+      this.log(`Match gestartet: ${this.team1.name} vs ${this.team2.name} (2v2)`);
     },
 
     _attachHpBar: function(f){
@@ -235,7 +284,57 @@
       // Treffer prüfen
       this.hitboxes.step(this.fighters, { showDebug:this._uiOpts.showHit });
 
+      // Win-Condition prüfen
+      this._checkWinCondition();
+
       this._renderHUD();
+    },
+
+    _checkWinCondition: function(){
+      if (this._matchEnded) return;
+
+      const team1Alive = this.fighters.filter(f=>f.teamId===1 && !f.ko).length;
+      const team2Alive = this.fighters.filter(f=>f.teamId===2 && !f.ko).length;
+
+      if (team1Alive === 0 && team2Alive > 0){
+        this._matchEnded = true;
+        this.log(`🏆 ${this.team2.name} gewinnt!`);
+        this.team2.recordWin();
+        this.team1.recordLoss();
+        this._showMatchResult(this.team2, this.team1);
+      } else if (team2Alive === 0 && team1Alive > 0){
+        this._matchEnded = true;
+        this.log(`🏆 ${this.team1.name} gewinnt!`);
+        this.team1.recordWin();
+        this.team2.recordLoss();
+        this._showMatchResult(this.team1, this.team2);
+      } else if (team1Alive === 0 && team2Alive === 0){
+        this._matchEnded = true;
+        this.log(`⚔️ Unentschieden! Beide Teams KO.`);
+      }
+    },
+
+    _showMatchResult: function(winner, loser){
+      // Award XP to all fighters
+      const winnerFighters = this.fighters.filter(f=>f.teamId===winner.id.includes('1')?1:2);
+      const loserFighters = this.fighters.filter(f=>f.teamId===loser.id.includes('1')?1:2);
+
+      winnerFighters.forEach(f=>{
+        const xpGain = 50; // Base XP for winning
+        f.addXp(xpGain);
+        f.trainingPoints += 50;
+      });
+
+      loserFighters.forEach(f=>{
+        const xpGain = 20; // Consolation XP
+        f.addXp(xpGain);
+        f.trainingPoints += 20;
+      });
+
+      // TODO: Show result screen (Iteration 3)
+      setTimeout(()=>{
+        this._matchEnded = false;
+      }, 3000);
     },
 
       _renderHUD: function(){
