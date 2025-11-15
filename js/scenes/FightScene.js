@@ -222,10 +222,15 @@
         this._attachHpBar(f);
       }
 
-      document.getElementById('p1-hp-fill')?.style.setProperty('width','100%');
-      document.getElementById('p1-en-fill')?.style.setProperty('width','100%');
-      document.getElementById('p2-hp-fill')?.style.setProperty('width','100%');
-      document.getElementById('p2-en-fill')?.style.setProperty('width','100%');
+      // Initialize UI bars
+      document.getElementById('t1f1-hp-fill')?.style.setProperty('width','100%');
+      document.getElementById('t1f1-en-fill')?.style.setProperty('width','100%');
+      document.getElementById('t1f2-hp-fill')?.style.setProperty('width','100%');
+      document.getElementById('t1f2-en-fill')?.style.setProperty('width','100%');
+      document.getElementById('t2f1-hp-fill')?.style.setProperty('width','100%');
+      document.getElementById('t2f1-en-fill')?.style.setProperty('width','100%');
+      document.getElementById('t2f2-hp-fill')?.style.setProperty('width','100%');
+      document.getElementById('t2f2-en-fill')?.style.setProperty('width','100%');
 
       this.log(`Match gestartet: ${this.team1.name} vs ${this.team2.name} (2v2)`);
     },
@@ -262,7 +267,7 @@
         const f = this.fighters[i];
         f.update(dt, { arena:A });
 
-        // HP-Balken updaten
+        // HP-Balken updaten (über Fighter)
         const w = 64;
         const hpRatio = Math.max(0, Math.min(1, f.hp / f.maxHp));
         const col = Phaser.Display.Color.Interpolate.RGBWithRGB(220,80,80, 53,222,133, 100*(hpRatio));
@@ -273,12 +278,18 @@
           f._hpFill.setSize((w-2)*hpRatio, 4);
           f._hpFill.setFillStyle(color);
         }
-        const side = f.teamId===1?'p1':'p2';
-        const hpEl = document.getElementById(`${side}-hp-fill`);
-        if (hpEl) hpEl.style.width = (hpRatio*100)+'%';
-        const enRatio = Math.max(0, Math.min(1, f.en / f.maxEn));
-        const enEl = document.getElementById(`${side}-en-fill`);
-        if (enEl) enEl.style.width = (enRatio*100)+'%';
+
+        // UI HP/Energy Bars updaten (für alle 4 Fighter)
+        // Mapping: T1_F1 → t1f1, T1_F2 → t1f2, T2_F1 → t2f1, T2_F2 → t2f2
+        const teamPrefix = f.teamId===1 ? 't1' : 't2';
+        const fighterNum = f.id.includes('F1') ? 'f1' : f.id.includes('F2') ? 'f2' : null;
+        if (fighterNum){
+          const hpEl = document.getElementById(`${teamPrefix}${fighterNum}-hp-fill`);
+          if (hpEl) hpEl.style.width = (hpRatio*100)+'%';
+          const enRatio = Math.max(0, Math.min(1, f.en / f.maxEn));
+          const enEl = document.getElementById(`${teamPrefix}${fighterNum}-en-fill`);
+          if (enEl) enEl.style.width = (enRatio*100)+'%';
+        }
       }
 
       // Treffer prüfen
