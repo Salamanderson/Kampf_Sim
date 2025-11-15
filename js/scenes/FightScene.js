@@ -353,9 +353,7 @@
       });
 
       // TODO: Show result screen (Iteration 3)
-      setTimeout(()=>{
-        this._matchEnded = false;
-      }, 3000);
+      // Don't reset _matchEnded - keep it true until manual restart to prevent duplicate win messages
     },
 
       _renderHUD: function(){

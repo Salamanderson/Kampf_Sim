@@ -84,71 +84,110 @@ def decide_personality(state):
     energy_threshold = 0.3 + (energy_mgmt / 30.0)
     low_energy = en_ratio < energy_threshold
 
+    # === ESCAPE/RETREAT (Low HP + High Positioning) ===
+    # Use "spin" (3rd skill) if it's a retreat skill when low HP and too close
+    escape_threshold = 0.3 - (risk_taking / 50.0)
+    if hp_ratio < escape_threshold and positioning >= 6 and dist < 100:
+        if random.random() < 0.6:
+            return "spin"  # May be retreat skill depending on loadout
+
     # === HEAL DECISION ===
     # WICHTIG: Keine Cooldown-Checks hier! tryHeal() macht das.
     heal_threshold = 0.5 - (risk_taking / 40.0)
     if hp_ratio < heal_threshold and en_ratio > 0.25:
         return "heal"
 
-    # === TEAMPLAY: Bei Ally bleiben ===
+    # === TEAMPLAY: Support Ally ===
     if teamplay >= 7 and ally:
         ally_dist = ally.get("dist", 999)
+        ally_hp_ratio = ally.get("hp", 100) / 100  # Rough estimate
+
+        # Move towards distant ally
         if ally_dist > 150 and random.random() < (teamplay / 15.0):
             ally_dx = ally["x"] - me["x"]
             ally_dy = ally["y"] - me["y"]
             if abs(ally_dx) > abs(ally_dy):
                 return "strafe_left" if ally_dx < 0 else "strafe_right"
             else:
-                return "move_towards" if ally_dy < 0 else "move_away"
+                return "move_towards" if ally_dy > 0 else "move_away"
 
-    # === AGGRESSION: Angriffs-Frequenz ===
-    attack_range = 100 + (aggression * 15)
-    safe_distance = 180 - (aggression * 10)
-
-    # === POSITIONING: Strategische Distanz ===
+    # === POSITIONING-BASED RANGE CONTROL ===
+    # High positioning = prefer optimal range (kiting)
+    # Low positioning = face-tank
     if positioning >= 7:
-        optimal_dist = 140
-        if dist < optimal_dist - 40:
-            if random.random() < 0.4:
-                return "move_away"
-        elif dist > optimal_dist + 60:
+        # Ranged/Kiting playstyle
+        optimal_dist = 110 + (positioning * 8)  # 110-190 range
+
+        if dist < optimal_dist - 50:
+            # Too close, kite away
             if random.random() < 0.5:
+                return "move_away"
+        elif dist > optimal_dist + 70:
+            # Too far, close in (but slowly)
+            if random.random() < 0.35:
                 return "move_towards"
+    elif positioning <= 3:
+        # Aggressive close-range
+        optimal_dist = 60
+        if dist > optimal_dist + 40 and random.random() < 0.6:
+            return "move_towards"
 
-    # === DASH (Risk-Taking) ===
-    # Dash hat eigenen Cooldown im Fighter - kein Check nötig
-    dash_chance = 0.3 + (risk_taking / 20.0)
-    if dist > 200 and random.random() < dash_chance:
-        return "dash"
+    # === DASH (Risk-Taking + Gap Closing) ===
+    # Use dash to close distance when far away
+    dash_chance = 0.25 + (risk_taking / 25.0)
+    if aggression >= 6:
+        # Aggressive fighters dash in more
+        if dist > 180 and random.random() < dash_chance:
+            return "dash"
+    elif positioning <= 4:
+        # Low positioning tanks just walk in
+        if dist > 220 and random.random() < (dash_chance * 0.6):
+            return "dash"
 
-    # === SPIN/AOE (Close Range) ===
-    # WICHTIG: Keine Cooldown-Checks! tryAttack() macht das.
-    spin_chance = (aggression + risk_taking) / 35.0
-    if dist < 100 and random.random() < spin_chance:
+    # === SPECIAL ATTACKS (Heavy/Spin) ===
+    # Spin/AoE at close range
+    spin_chance = (aggression + risk_taking) / 40.0
+    if dist < 80 and random.random() < spin_chance and not low_energy:
         return "spin"
 
-    # === ATTACK DECISION ===
+    # Heavy attack (gap closer or burst)
+    heavy_range = 90 + (aggression * 10)
+    if dist <= heavy_range and dist > 40:
+        heavy_chance = (aggression + risk_taking) / 30.0
+        if random.random() < heavy_chance and not low_energy:
+            return "attack_heavy"  # May be dash_strike depending on loadout
+
+    # === BASIC ATTACK ===
+    # Attack at appropriate range
+    if positioning >= 7:
+        # Ranged fighters attack from far
+        attack_range = 120 + (positioning * 10)
+    else:
+        # Melee fighters attack close
+        attack_range = 70 + (aggression * 8)
+
     if dist <= attack_range:
-        heavy_chance = aggression / 25.0
-
-        # Energy Management: Wenn low energy, nur Light
-        if low_energy:
+        if low_energy or random.random() > (aggression / 15.0):
             return "attack_light"
-
-        # Heavy oder Light basierend auf Aggression
-        # Keine Cooldown-Checks - tryAttack() macht das
-        if random.random() < heavy_chance:
-            return "attack_heavy"
         else:
-            return "attack_light"
+            return "attack_heavy" if random.random() < 0.3 else "attack_light"
 
     # === MOVEMENT ===
+    # Defensive fighters keep distance
+    safe_distance = 130 - (aggression * 8)
     if aggression <= 4 and dist < safe_distance:
-        return random.choice(["move_away", "strafe_left", "strafe_right", "move_away"])
+        moves = ["move_away", "strafe_left", "strafe_right", "move_away"]
+        return random.choice(moves)
 
-    # Default: Annähern mit etwas Kreisen
-    moves = ["move_towards"] * (aggression // 2)
-    moves += ["strafe_left", "strafe_right"]
+    # Default: Approach with circling (more circling for high positioning)
+    if positioning >= 6:
+        # Kiting fighters circle more
+        moves = ["move_towards", "strafe_left", "strafe_right", "strafe_left", "strafe_right"]
+    else:
+        # Aggressive fighters rush in
+        moves = ["move_towards"] * (aggression // 2 + 1)
+        moves += ["strafe_left", "strafe_right"]
+
     return random.choice(moves)
 
 def PY_AI_DECIDE(profile_id, state_json):
