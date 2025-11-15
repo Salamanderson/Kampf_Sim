@@ -67,9 +67,17 @@
     this.hp = this.maxHp; this.en = this.maxEn;
 
     // Loadout (welche Moves erlaubt)
-    const loadout = cfg.loadout && Array.isArray(cfg.loadout) ? cfg.loadout.slice() : ['light','heavy','spin','heal'];
+    const loadout = cfg.loadout && Array.isArray(cfg.loadout) ? cfg.loadout.slice() : ['slash','power_strike','whirlwind','quick_heal'];
+    console.log('[Fighter] Constructor: id=', this.id, 'loadout=', loadout, 'cfg.loadout=', cfg.loadout);
     this.moves = {};
-    loadout.forEach(k => { if (defaultMoves[k]) this.moves[k] = Object.assign({}, defaultMoves[k]); });
+    loadout.forEach(k => {
+      if (defaultMoves[k]) {
+        this.moves[k] = Object.assign({}, defaultMoves[k]);
+      } else {
+        console.warn('[Fighter] Skill not found in defaultMoves:', k);
+      }
+    });
+    console.log('[Fighter] Final moves:', Object.keys(this.moves));
 
     // Physik
     this.x = cfg.x || 640; this.y = cfg.y || 360;

@@ -158,6 +158,7 @@
 
       // Charaktere laden
       const chars = (window.GameData && window.GameData.characters) ? window.GameData.characters : [];
+      console.log('[FightScene] Loaded characters:', chars.length, chars);
 
       // Team Setup (für jetzt: 2v2 mit fest definierten Teams)
       const { Team } = window.Engine;
@@ -167,6 +168,7 @@
         chars.find(c=>c.id==='circle_bot') || chars[0],
         chars.find(c=>c.id==='triangle_bot') || chars[1] || chars[0]
       ];
+      console.log('[FightScene] Team 1 roster:', team1Roster);
       this.team1 = new Team({
         id: 'team_1',
         name: 'Team Blue',
@@ -180,6 +182,7 @@
         chars.find(c=>c.id==='square_bot') || chars[2] || chars[0],
         chars.find(c=>c.id==='circle_bot_2') || chars[3] || chars[0]
       ];
+      console.log('[FightScene] Team 2 roster:', team2Roster);
       this.team2 = new Team({
         id: 'team_2',
         name: 'Team Red',
@@ -195,6 +198,7 @@
       for (let i=0; i<team1Roster.length; i++){
         const def = team1Roster[i];
         const pos = team1Positions[i];
+        console.log('[FightScene] Creating Team 1 Fighter', i+1, 'def=', def, 'loadout=', def?.loadout);
         const f = new Fighter(this, Object.assign({}, def, {
           id: `T1_F${i+1}`,
           teamId: 1,
@@ -202,6 +206,7 @@
           y: pos.y,
           controllerProfile: this._uiOpts.p1 || 'aggressive'
         }));
+        console.log('[FightScene] Fighter created, moves=', Object.keys(f.moves));
         // Attach UI bars
         f._uiHpBar = document.getElementById(`t1f${i+1}-hp-fill`);
         f._uiEnBar = document.getElementById(`t1f${i+1}-en-fill`);
