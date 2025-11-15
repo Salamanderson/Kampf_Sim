@@ -65,6 +65,13 @@
         if (this._mode==='simulator') this.restartMatch();
       });
 
+      window.addEventListener('VC_START_MANAGER_MATCH', (ev)=>{
+        const d = ev.detail || {};
+        this._managerTeams = { team1: d.team1 || [], team2: d.team2 || [] };
+        this._isManagerMatch = true;
+        this.restartMatch();
+      });
+
       window.addEventListener('VC_SET_MODE', (ev)=>{
         const m = ev.detail?.mode || 'simulator';
         this._setMode(m);
@@ -160,14 +167,28 @@
       const chars = (window.GameData && window.GameData.characters) ? window.GameData.characters : [];
       console.log('[FightScene] Loaded characters:', chars.length, chars);
 
-      // Team Setup (für jetzt: 2v2 mit fest definierten Teams)
+      // Team Setup
       const { Team } = window.Engine;
 
-      // Team 1 (Blue)
-      const team1Roster = [
-        chars.find(c=>c.id==='circle_bot') || chars[0],
-        chars.find(c=>c.id==='triangle_bot') || chars[1] || chars[0]
-      ];
+      let team1Roster, team2Roster;
+
+      // Check if this is a manager match with custom teams
+      if (this._isManagerMatch && this._managerTeams) {
+        team1Roster = this._managerTeams.team1;
+        team2Roster = this._managerTeams.team2;
+        console.log('[FightScene] Manager Match - Team 1:', team1Roster.length, 'Team 2:', team2Roster.length);
+      } else {
+        // Default 2v2 setup
+        team1Roster = [
+          chars.find(c=>c.id==='circle_bot') || chars[0],
+          chars.find(c=>c.id==='triangle_bot') || chars[1] || chars[0]
+        ];
+        team2Roster = [
+          chars.find(c=>c.id==='square_bot') || chars[2] || chars[0],
+          chars.find(c=>c.id==='circle_bot_2') || chars[3] || chars[0]
+        ];
+      }
+
       console.log('[FightScene] Team 1 roster:', team1Roster);
       this.team1 = new Team({
         id: 'team_1',
@@ -177,11 +198,6 @@
         formation: 'line'
       });
 
-      // Team 2 (Red)
-      const team2Roster = [
-        chars.find(c=>c.id==='square_bot') || chars[2] || chars[0],
-        chars.find(c=>c.id==='circle_bot_2') || chars[3] || chars[0]
-      ];
       console.log('[FightScene] Team 2 roster:', team2Roster);
       this.team2 = new Team({
         id: 'team_2',
