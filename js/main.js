@@ -244,6 +244,34 @@
       ccCurrentCharId = null;
       ccEditMode = false;
     });
+
+    // Live preview update when color changes
+    document.getElementById('cc-color')?.addEventListener('input', () => {
+      if (ccCurrentCharId) {
+        updateLivePreview();
+      }
+    });
+  }
+
+  function updateLivePreview(){
+    if (!ccCurrentCharId) return;
+
+    const char = window.GameData.characters.find(c => c.id === ccCurrentCharId);
+    if (!char) return;
+
+    // Get current form values
+    const colorHex = document.getElementById('cc-color').value;
+    const color = parseInt(colorHex.substring(1), 16);
+
+    // Create updated character object for preview
+    const previewChar = Object.assign({}, char, {
+      color: color,
+      name: document.getElementById('cc-name').value || char.name,
+      role: document.getElementById('cc-role').value || char.role
+    });
+
+    // Send update to arena
+    window.dispatchEvent(new CustomEvent('VC_CC_UPDATE', { detail: { def: previewChar } }));
   }
 
   function populateCharCreatorList(){
