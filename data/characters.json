@@ -3,6 +3,7 @@
     {
       "id": "circle_bot",
       "name": "Kreis-Bot",
+      "role": "Aggressive",
       "shape": "circle",
       "color": 6740479,
       "radius": 22,
@@ -23,6 +24,7 @@
     {
       "id": "triangle_bot",
       "name": "Dreieck-Bot",
+      "role": "Support",
       "shape": "circle",
       "color": 8978278,
       "radius": 22,
@@ -43,6 +45,7 @@
     {
       "id": "square_bot",
       "name": "Quadrat-Bot",
+      "role": "Tank",
       "shape": "circle",
       "color": 16737894,
       "radius": 22,
@@ -63,6 +66,7 @@
     {
       "id": "circle_bot_2",
       "name": "Kreis-Bot Beta",
+      "role": "Assassin",
       "shape": "circle",
       "color": 16755268,
       "radius": 22,

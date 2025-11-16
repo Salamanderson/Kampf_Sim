@@ -35,6 +35,7 @@
     create: function(){
       this.cameras.main.setBackgroundColor('#0f0f16');
       this.arena = computeArena();
+      this._gameSpeed = 1; // Default game speed
 
       // Arena zeichnen
       this._arenaGfx = this.add.graphics().setDepth(-2);
@@ -288,7 +289,9 @@
       }
 
       if (this.feel.preUpdate(delta)){ this._renderHUD(); return; }
-      const dt = Math.min(delta, 50);
+      // Apply game speed multiplier
+      const speed = this._gameSpeed || 1;
+      const dt = Math.min(delta, 50) * speed;
       const A = this.arena;
 
       // KI → Aktionen
