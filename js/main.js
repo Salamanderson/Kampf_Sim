@@ -100,10 +100,11 @@
         document.getElementById('panel-char-right').style.display='block';
         startCharCreatorPreviewFromSelection();
         mode = 'char_creator';
-      } else if (id === 'tab-story'){
-        document.getElementById('panel-story-left').style.display='block';
-        document.getElementById('panel-story-right').style.display='block';
-        mode = 'story';
+      } else if (id === 'tab-manager'){
+        document.getElementById('panel-manager-left').style.display='block';
+        document.getElementById('panel-manager-right').style.display='block';
+        populateRoster();
+        mode = 'manager';
       } else if (id === 'tab-skill'){
         document.getElementById('panel-skill-left').style.display='block';
         document.getElementById('panel-skill-right').style.display='block';
@@ -154,8 +155,8 @@
       }));
     });
 
+    document.getElementById('tab-manager')?.addEventListener('click', ()=>setActiveTab('tab-manager'));
     document.getElementById('tab-sim')?.addEventListener('click', ()=>setActiveTab('tab-sim'));
-    document.getElementById('tab-story')?.addEventListener('click', ()=>setActiveTab('tab-story'));
     document.getElementById('tab-char')?.addEventListener('click', ()=>setActiveTab('tab-char'));
     document.getElementById('tab-skill')?.addEventListener('click', ()=>setActiveTab('tab-skill'));
     document.getElementById('tab-ai')?.addEventListener('click', ()=>setActiveTab('tab-ai'));
@@ -391,6 +392,113 @@
     }catch(e){}
   }
 
+  // ----- Manager Mode -----
+  let managerTeam1 = [];
+  let managerTeam2 = [];
+
+  function populateRoster(){
+    const list = document.getElementById('roster-list');
+    if (!list) return;
+
+    const chars = window.GameData.characters || [];
+    list.innerHTML = '';
+
+    chars.forEach((char, idx) => {
+      const card = document.createElement('div');
+      card.className = 'fighter-card';
+      card.dataset.charId = char.id;
+
+      const colorBadge = `<span class="color-badge" style="background-color:#${char.color.toString(16).padStart(6,'0')}"></span>`;
+      card.innerHTML = `
+        <div class="name">${colorBadge}${char.name}</div>
+        <div class="stats">
+          <span class="stat">Lvl ${char.level || 1}</span>
+          <span class="stat">HP ${char.stats?.maxHp || 100}</span>
+          <span class="stat">ATK ${(char.stats?.physAtk || 1).toFixed(1)}</span>
+          <span class="stat">SPD ${char.stats?.moveSpeed || 240}</span>
+        </div>
+      `;
+
+      card.addEventListener('click', () => selectFighterForTeam(char.id));
+      list.appendChild(card);
+    });
+  }
+
+  function selectFighterForTeam(charId){
+    // Find first empty slot
+    const emptySlot = document.querySelector('.team-slot:not(.filled)');
+    if (!emptySlot) {
+      alert('Alle Team-Slots sind voll! Klicke auf einen Slot um ihn zu leeren.');
+      return;
+    }
+
+    const char = window.GameData.characters.find(c => c.id === charId);
+    if (!char) return;
+
+    const team = emptySlot.dataset.team;
+    const slot = emptySlot.dataset.slot;
+
+    if (team === '1') {
+      managerTeam1[slot] = char;
+    } else {
+      managerTeam2[slot] = char;
+    }
+
+    updateTeamSlot(emptySlot, char);
+  }
+
+  function updateTeamSlot(slotEl, char){
+    if (!char) {
+      slotEl.classList.remove('filled');
+      slotEl.innerHTML = '<div class="empty-slot">Klick Fighter links zum Hinzufügen</div>';
+    } else {
+      slotEl.classList.add('filled');
+      const colorBadge = `<span class="color-badge" style="background-color:#${char.color.toString(16).padStart(6,'0')}"></span>`;
+      slotEl.innerHTML = `
+        <div class="fighter-info">
+          ${colorBadge}
+          <div>
+            <div class="name">${char.name}</div>
+            <div class="level">Level ${char.level || 1}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Click to remove
+    slotEl.onclick = () => {
+      const team = slotEl.dataset.team;
+      const slot = slotEl.dataset.slot;
+      if (team === '1') managerTeam1[slot] = null;
+      else managerTeam2[slot] = null;
+      updateTeamSlot(slotEl, null);
+    };
+  }
+
+  function bindManagerMode(){
+    document.getElementById('btn-start-manager-match')?.addEventListener('click', startManagerMatch);
+    document.getElementById('btn-back-to-roster')?.addEventListener('click', () => {
+      document.getElementById('match-results').style.display = 'none';
+      setActiveTab('tab-manager');
+    });
+  }
+
+  function startManagerMatch(){
+    const team1 = managerTeam1.filter(f => f);
+    const team2 = managerTeam2.filter(f => f);
+
+    if (team1.length === 0 || team2.length === 0) {
+      alert('Beide Teams müssen mindestens 1 Fighter haben!');
+      return;
+    }
+
+    // Switch to simulator and start match with selected teams
+    setActiveTab('tab-sim');
+    window.dispatchEvent(new CustomEvent('VC_START_MANAGER_MATCH', {
+      detail: { team1, team2 }
+    }));
+  }
+
   // ----- Boot -----
   window.addEventListener('load', async ()=>{
     // Daten laden
@@ -407,7 +515,8 @@
     bindHeader();
     setupSkillButtons();
     bindCharCreatorUI();
-      initHUDWindow();
+    bindManagerMode();
+    initHUDWindow();
 
     // Start Game
     new Phaser.Game(config);

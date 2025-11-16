@@ -72,6 +72,29 @@
     #hud-content { padding:8px; font-size:12px; white-space:pre; }
 
     #footer-note { position:absolute; bottom:10px; left:12px; font-size:12px; opacity:.7; user-select:none; }
+
+    /* Manager Mode Styles */
+    .fighter-card {
+      background:#1a1a24; border:1px solid #2b2b36; border-radius:8px; padding:8px; margin-bottom:8px; cursor:pointer;
+      transition: all 0.2s;
+    }
+    .fighter-card:hover { border-color:#00aaff; background:#1e1e2a; }
+    .fighter-card.selected { border-color:#00ff88; background:#1a2a1e; }
+    .fighter-card .name { font-weight:600; font-size:13px; margin-bottom:4px; }
+    .fighter-card .stats { font-size:11px; opacity:0.8; display:flex; gap:8px; flex-wrap:wrap; }
+    .fighter-card .stat { background:#14141c; padding:2px 6px; border-radius:4px; }
+    .fighter-card .color-badge { width:16px; height:16px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle; }
+
+    .team-slot {
+      background:#14141c; border:2px dashed #2b2b36; border-radius:8px; padding:10px; margin-bottom:8px;
+      min-height:60px; cursor:pointer; transition: all 0.2s;
+    }
+    .team-slot:hover { border-color:#00aaff; }
+    .team-slot .empty-slot { color:#666; font-size:11px; text-align:center; padding:10px; }
+    .team-slot .fighter-info { display:flex; align-items:center; gap:8px; }
+    .team-slot .fighter-info .name { font-size:12px; font-weight:600; }
+    .team-slot .fighter-info .level { font-size:10px; opacity:0.7; }
+    .team-slot.filled { border-style:solid; border-color:#00aaff; }
   </style>
 
   <!-- Namespaces -->
@@ -88,8 +111,8 @@
   <!-- HAUPT MENU -->
   <div id="ui-header">
     <div class="tabs">
+      <button class="tab" id="tab-manager">Manager</button>
       <button class="tab active" id="tab-sim">Simulator</button>
-      <button class="tab" id="tab-story">Story</button>
       <button class="tab" id="tab-char">Char. Creator</button>
       <button class="tab" id="tab-skill">Skill Creator</button>
       <button class="tab" id="tab-ai">KI Creator</button>
@@ -156,8 +179,11 @@
       </div>
     </div>
 
-    <div id="panel-story-left" style="display:none;">
-      <div class="section"><h3>Story</h3><p>Platzhalter.</p></div>
+    <div id="panel-manager-left" style="display:none;">
+      <h2>Fighter Roster</h2>
+      <div id="roster-list" style="max-height:600px; overflow-y:auto;">
+        <!-- Fighter cards will be added here dynamically -->
+      </div>
     </div>
     <div id="panel-skill-left" style="display:none;">
       <div class="section"><h3>Skill Creator</h3><p>Platzhalter.</p></div>
@@ -245,8 +271,40 @@
       </div>
     </div>
 
-    <div id="panel-story-right" style="display:none;">
-      <div class="section"><h3>Story</h3><p>Platzhalter.</p></div>
+    <div id="panel-manager-right" style="display:none;">
+      <h2>Team Setup</h2>
+
+      <div class="section" style="margin-bottom:16px;">
+        <h3 style="color:#66d9ff;">Team 1 (Blue)</h3>
+        <div id="team1-slot1" class="team-slot" data-team="1" data-slot="0">
+          <div class="empty-slot">Klick Fighter links zum Hinzufügen</div>
+        </div>
+        <div id="team1-slot2" class="team-slot" data-team="1" data-slot="1">
+          <div class="empty-slot">Klick Fighter links zum Hinzufügen</div>
+        </div>
+      </div>
+
+      <div class="section" style="margin-bottom:16px;">
+        <h3 style="color:#ff9b7a;">Team 2 (Red)</h3>
+        <div id="team2-slot1" class="team-slot" data-team="2" data-slot="0">
+          <div class="empty-slot">Klick Fighter links zum Hinzufügen</div>
+        </div>
+        <div id="team2-slot2" class="team-slot" data-team="2" data-slot="1">
+          <div class="empty-slot">Klick Fighter links zum Hinzufügen</div>
+        </div>
+      </div>
+
+      <button id="btn-start-manager-match" style="width:100%; padding:12px; font-size:14px; background:#00aaff; color:white; border:none; border-radius:8px; cursor:pointer; margin-top:8px;">
+        Start Match
+      </button>
+
+      <div id="match-results" style="display:none; margin-top:16px;" class="section">
+        <h3>Match Ergebnis</h3>
+        <div id="result-content"></div>
+        <button id="btn-back-to-roster" style="width:100%; padding:10px; margin-top:12px; background:#2b2b36; color:white; border:1px solid #00aaff; border-radius:8px; cursor:pointer;">
+          Zurück zum Roster
+        </button>
+      </div>
     </div>
     <div id="panel-skill-right" style="display:none;">
       <div class="section"><h3>Skill Creator</h3><p>Platzhalter.</p></div>

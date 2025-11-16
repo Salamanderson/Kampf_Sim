@@ -4,7 +4,7 @@
       "id": "circle_bot",
       "name": "Kreis-Bot",
       "shape": "circle",
-      "color": 6612095,
+      "color": 6740479,
       "radius": 22,
       "level": 1,
       "xp": 0,
@@ -18,67 +18,67 @@
       },
       "items": [],
       "stats": { "maxHp": 120, "maxEn": 100, "physAtk":1.1, "energyAtk":1, "attackSpeed":1.1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1900, "moveSpeed": 250, "dashSpeed": 580, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
-      "loadout": ["slash","power_strike","whirlwind","quick_heal"]
+      "loadout": ["slash","dash_strike","whirlwind","quick_heal"]
     },
     {
       "id": "triangle_bot",
       "name": "Dreieck-Bot",
-      "shape": "triangle",
-      "color": 16746442,
-      "radius": 24,
+      "shape": "circle",
+      "color": 8978278,
+      "radius": 22,
       "level": 1,
       "xp": 0,
       "trainingPoints": 0,
       "personality": {
-        "aggression": 4,
-        "teamplay": 7,
-        "riskTaking": 3,
-        "positioning": 7,
-        "energyManagement": 6
+        "aggression": 3,
+        "teamplay": 8,
+        "riskTaking": 2,
+        "positioning": 8,
+        "energyManagement": 7
       },
       "items": [],
-      "stats": { "maxHp": 110, "maxEn": 110, "physAtk":0.9, "energyAtk":1.2, "attackSpeed":1, "castSpeed":1.2, "channelSpeed":1, "physRange":1.2, "energyRange":1.3, "accel": 1850, "moveSpeed": 245, "dashSpeed": 560, "friction": 0.86, "physDef":0, "energyDef":5, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
-      "loadout": ["poke","shield_bash","guard","area_heal"]
+      "stats": { "maxHp": 105, "maxEn": 120, "physAtk":0.8, "energyAtk":1.3, "attackSpeed":1, "castSpeed":1.3, "channelSpeed":1, "physRange":1.4, "energyRange":1.5, "accel": 1900, "moveSpeed": 255, "dashSpeed": 580, "friction": 0.86, "physDef":0, "energyDef":5, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "loadout": ["snipe","poke","area_heal","guard"]
     },
     {
       "id": "square_bot",
       "name": "Quadrat-Bot",
-      "shape": "square",
-      "color": 5570815,
-      "radius": 20,
+      "shape": "circle",
+      "color": 16737894,
+      "radius": 22,
       "level": 1,
       "xp": 0,
       "trainingPoints": 0,
       "personality": {
         "aggression": 5,
         "teamplay": 6,
-        "riskTaking": 5,
+        "riskTaking": 4,
         "positioning": 6,
         "energyManagement": 7
       },
       "items": [],
-      "stats": { "maxHp": 140, "maxEn": 95, "physAtk":1.1, "energyAtk":0.9, "attackSpeed":0.9, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1750, "moveSpeed": 235, "dashSpeed": 540, "friction": 0.86, "physDef":10, "energyDef":5, "hpRegen":0.5, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "stats": { "maxHp": 150, "maxEn": 90, "physAtk":1.2, "energyAtk":0.9, "attackSpeed":0.85, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1700, "moveSpeed": 225, "dashSpeed": 520, "friction": 0.86, "physDef":15, "energyDef":8, "hpRegen":0.8, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
       "loadout": ["punch","ground_slam","fortify","self_heal"]
     },
     {
       "id": "circle_bot_2",
       "name": "Kreis-Bot Beta",
       "shape": "circle",
-      "color": 16737434,
+      "color": 16755268,
       "radius": 22,
       "level": 1,
       "xp": 0,
       "trainingPoints": 0,
       "personality": {
         "aggression": 8,
-        "teamplay": 3,
-        "riskTaking": 8,
-        "positioning": 4,
-        "energyManagement": 4
+        "teamplay": 2,
+        "riskTaking": 9,
+        "positioning": 7,
+        "energyManagement": 5
       },
       "items": [],
-      "stats": { "maxHp": 115, "maxEn": 105, "physAtk":1.15, "energyAtk":1.05, "attackSpeed":1.2, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 2000, "moveSpeed": 260, "dashSpeed": 600, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
-      "loadout": ["slash","power_strike","whirlwind","quick_heal"]
+      "stats": { "maxHp": 110, "maxEn": 110, "physAtk":1.2, "energyAtk":1.1, "attackSpeed":1.25, "castSpeed":1.1, "channelSpeed":1, "physRange":1.1, "energyRange":1, "accel": 2100, "moveSpeed": 270, "dashSpeed": 620, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
+      "loadout": ["slash","dash_strike","retreat","quick_heal"]
     }
   ]
 }
