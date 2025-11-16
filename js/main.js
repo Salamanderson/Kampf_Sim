@@ -410,6 +410,17 @@
   let managerTeam1 = [];
   let managerTeam2 = [];
 
+  // Role icons and colors
+  function getRoleInfo(role){
+    const roleMap = {
+      'Aggressive': { icon: '⚔️', color: '#ff5555', name: 'Aggressive' },
+      'Support': { icon: '✨', color: '#77ddff', name: 'Support' },
+      'Tank': { icon: '🛡️', color: '#ffaa55', name: 'Tank' },
+      'Assassin': { icon: '🗡️', color: '#ff88ff', name: 'Assassin' }
+    };
+    return roleMap[role] || { icon: '❓', color: '#888888', name: role || 'Unknown' };
+  }
+
   function populateRoster(){
     const list = document.getElementById('roster-list');
     if (!list) return;
@@ -423,6 +434,10 @@
       card.dataset.charId = char.id;
 
       const colorBadge = `<span class="color-badge" style="background-color:#${char.color.toString(16).padStart(6,'0')}"></span>`;
+
+      // Role badge
+      const roleInfo = getRoleInfo(char.role);
+      const roleBadge = `<span style="font-size:14px; margin-left:4px;" title="${roleInfo.name}">${roleInfo.icon}</span>`;
 
       // Show equipped items
       let itemBadges = '';
@@ -441,7 +456,7 @@
       }
 
       card.innerHTML = `
-        <div class="name">${colorBadge}${char.name}</div>
+        <div class="name">${colorBadge}${char.name}${roleBadge}</div>
         <div class="stats">
           <span class="stat">Lvl ${char.level || 1}</span>
           <span class="stat">HP ${char.stats?.maxHp || 100}</span>
@@ -451,8 +466,8 @@
         ${itemBadges}
       `;
 
-      card.addEventListener('click', () => selectFighterForTeam(char.id));
-      card.addEventListener('dblclick', () => showItemManager(char.id));
+      card.addEventListener('click', () => showItemManager(char.id));
+      card.addEventListener('dblclick', () => selectFighterForTeam(char.id));
       list.appendChild(card);
     });
   }
@@ -467,10 +482,18 @@
     selectedFighterForItems = charId;
     const section = document.getElementById('item-manager-section');
     const nameSpan = document.getElementById('selected-fighter-name');
+    const infoSpan = document.getElementById('selected-fighter-info');
 
     if (!section || !nameSpan) return;
 
     nameSpan.textContent = char.name;
+
+    // Show role and level info
+    if (infoSpan){
+      const roleInfo = getRoleInfo(char.role);
+      infoSpan.innerHTML = `<span style="color:${roleInfo.color};">${roleInfo.icon} ${roleInfo.name}</span> • Level ${char.level || 1} • HP ${char.stats?.maxHp || 100} • ATK ${(char.stats?.physAtk || 1).toFixed(1)}`;
+    }
+
     section.style.display = 'block';
 
     // Highlight selected fighter in roster
