@@ -90,6 +90,16 @@
       document.querySelectorAll('#ui-left > div').forEach(d=>d.style.display='none');
       document.querySelectorAll('#ui-right > div').forEach(d=>d.style.display='none');
 
+      // Control game canvas pointer events - disable for UI-heavy tabs
+      const gameRoot = document.getElementById('game-root');
+      if (gameRoot) {
+        if (id === 'tab-sim') {
+          gameRoot.style.pointerEvents = 'auto';
+        } else {
+          gameRoot.style.pointerEvents = 'none';
+        }
+      }
+
       let mode = 'simulator';
       if (id === 'tab-sim'){
         document.getElementById('panel-sim-left').style.display='block';
