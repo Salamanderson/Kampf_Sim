@@ -247,10 +247,12 @@
     list.innerHTML = '';
     console.log('[CharCreator] Populating list with', chars.length, 'characters');
 
-    chars.forEach(char => {
+    chars.forEach((char, index) => {
       const card = document.createElement('div');
       card.className = 'fighter-card';
       card.style.cursor = 'pointer';
+      card.style.userSelect = 'none';
+      card.dataset.charId = char.id;
 
       const roleInfo = getRoleInfo(char.role);
       const colorBadge = `<span class="color-badge" style="background-color:#${char.color.toString(16).padStart(6,'0')}"></span>`;
@@ -264,12 +266,24 @@
         </div>
       `;
 
-      card.addEventListener('click', () => {
-        console.log('[CharCreator] Card clicked:', char.id);
-        loadCharacterForEdit(char.id);
-      });
+      // Use onclick property for more reliable event handling
+      const charIdCopy = char.id; // Capture in closure
+      card.onclick = function(e) {
+        console.log('[CharCreator] Card clicked!', charIdCopy, e);
+        e.stopPropagation();
+        loadCharacterForEdit(charIdCopy);
+      };
+
       list.appendChild(card);
+      console.log('[CharCreator] Card added:', index, char.name, char.id);
     });
+
+    console.log('[CharCreator] List populated. Total cards:', list.children.length);
+
+    // Test: Add a click listener to the list itself to see if ANY clicks are detected
+    list.onclick = function(e) {
+      console.log('[CharCreator] List container clicked, target:', e.target);
+    };
   }
 
   function loadCharacterForEdit(charId){
