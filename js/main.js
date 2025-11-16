@@ -308,6 +308,9 @@
     ccCurrentCharId = charId;
     ccEditMode = true;
 
+    // Send preview to arena
+    window.dispatchEvent(new CustomEvent('VC_CC_UPDATE', { detail: { def: char } }));
+
     // Ensure skill selector is populated
     if (!document.querySelector('.cc-skill-checkbox')){
       console.log('[CharCreator] Skill selector not found, populating...');
