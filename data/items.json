@@ -1,0 +1,189 @@
+{
+  "items": [
+    {
+      "id": "damage_ring",
+      "name": "Ring des Angriffs",
+      "description": "+20% Phys. Angriff",
+      "slot": "accessory",
+      "rarity": "common",
+      "color": 16737894,
+      "stats": {
+        "physAtk": 0.2
+      }
+    },
+    {
+      "id": "energy_crystal",
+      "name": "Energiekristall",
+      "description": "+25% Energie Angriff",
+      "slot": "accessory",
+      "rarity": "common",
+      "color": 6740479,
+      "stats": {
+        "energyAtk": 0.25
+      }
+    },
+    {
+      "id": "speed_boots",
+      "name": "Flinkheits-Stiefel",
+      "description": "+15% Bewegung & Dash",
+      "slot": "armor",
+      "rarity": "common",
+      "color": 65535,
+      "stats": {
+        "moveSpeed": 0.15,
+        "dashSpeed": 0.15
+      }
+    },
+    {
+      "id": "hp_amulet",
+      "name": "Lebens-Amulett",
+      "description": "+30 Max HP",
+      "slot": "accessory",
+      "rarity": "common",
+      "color": 65280,
+      "stats": {
+        "maxHp": 30
+      }
+    },
+    {
+      "id": "energy_amulet",
+      "name": "Mana-Amulett",
+      "description": "+25 Max Energie",
+      "slot": "accessory",
+      "rarity": "common",
+      "color": 8978278,
+      "stats": {
+        "maxEn": 25
+      }
+    },
+    {
+      "id": "defense_shield",
+      "name": "Verteidigungsschild",
+      "description": "+10 Phys. & Energie Def.",
+      "slot": "armor",
+      "rarity": "uncommon",
+      "color": 12632256,
+      "stats": {
+        "physDef": 10,
+        "energyDef": 10
+      }
+    },
+    {
+      "id": "berserker_blade",
+      "name": "Berserker-Klinge",
+      "description": "+35% Angriff, +20% Speed, -15 HP",
+      "slot": "weapon",
+      "rarity": "rare",
+      "color": 16711680,
+      "stats": {
+        "physAtk": 0.35,
+        "attackSpeed": 0.2,
+        "maxHp": -15
+      }
+    },
+    {
+      "id": "tank_armor",
+      "name": "Panzerung",
+      "description": "+50 HP, +15 Phys. Def., -10% Speed",
+      "slot": "armor",
+      "rarity": "rare",
+      "color": 9868950,
+      "stats": {
+        "maxHp": 50,
+        "physDef": 15,
+        "moveSpeed": -0.1
+      }
+    },
+    {
+      "id": "mage_staff",
+      "name": "Magier-Stab",
+      "description": "+40% Energie Angriff, +30% Cast Speed",
+      "slot": "weapon",
+      "rarity": "rare",
+      "color": 11141375,
+      "stats": {
+        "energyAtk": 0.4,
+        "castSpeed": 0.3
+      }
+    },
+    {
+      "id": "assassin_dagger",
+      "name": "Assassinen-Dolch",
+      "description": "+25% Angriff, +40% Attack Speed",
+      "slot": "weapon",
+      "rarity": "uncommon",
+      "color": 6684774,
+      "stats": {
+        "physAtk": 0.25,
+        "attackSpeed": 0.4
+      }
+    },
+    {
+      "id": "regen_ring",
+      "name": "Regenerations-Ring",
+      "description": "+1.5 HP/s & +0.8 EN/s Regeneration",
+      "slot": "accessory",
+      "rarity": "uncommon",
+      "color": 65407,
+      "stats": {
+        "hpRegen": 1.5,
+        "enRegen": 0.8
+      }
+    },
+    {
+      "id": "range_bow",
+      "name": "Fernkampf-Bogen",
+      "description": "+50% Phys. & Energie Reichweite",
+      "slot": "weapon",
+      "rarity": "uncommon",
+      "color": 9109504,
+      "stats": {
+        "physRange": 0.5,
+        "energyRange": 0.5
+      }
+    },
+    {
+      "id": "champions_crown",
+      "name": "Krone des Champions",
+      "description": "+20% Alle Angriffsarten, +20 HP",
+      "slot": "accessory",
+      "rarity": "epic",
+      "color": 16766720,
+      "stats": {
+        "physAtk": 0.2,
+        "energyAtk": 0.2,
+        "maxHp": 20
+      }
+    },
+    {
+      "id": "turtle_shell",
+      "name": "Schildkröten-Panzer",
+      "description": "+25 Alle Def., +40 HP, -20% Speed",
+      "slot": "armor",
+      "rarity": "epic",
+      "color": 5614165,
+      "stats": {
+        "physDef": 25,
+        "energyDef": 25,
+        "maxHp": 40,
+        "moveSpeed": -0.2,
+        "dashSpeed": -0.2
+      }
+    },
+    {
+      "id": "phoenix_feather",
+      "name": "Phönix-Feder",
+      "description": "+3 HP/s, +1.5 EN/s, +15% Speeds",
+      "slot": "accessory",
+      "rarity": "epic",
+      "color": 16744448,
+      "stats": {
+        "hpRegen": 3,
+        "enRegen": 1.5,
+        "attackSpeed": 0.15,
+        "castSpeed": 0.15,
+        "moveSpeed": 0.15
+      }
+    }
+  ]
+}

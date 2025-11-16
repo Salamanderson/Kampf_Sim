@@ -95,6 +95,57 @@
     .team-slot .fighter-info .name { font-size:12px; font-weight:600; }
     .team-slot .fighter-info .level { font-size:10px; opacity:0.7; }
     .team-slot.filled { border-style:solid; border-color:#00aaff; }
+
+    /* Speed Control Buttons */
+    .speed-btn {
+      flex:1; padding:8px; background:#14141c; color:#eaeaf0; border:1px solid #2b2b36;
+      border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; transition: all 0.2s;
+    }
+    .speed-btn:hover { border-color:#00aaff; background:#1a1a24; }
+    .speed-btn.active { background:#00aaff; color:#fff; border-color:#00aaff; }
+
+    /* Item Management */
+    .item-slot {
+      flex:1; min-width:80px; background:#14141c; border:2px dashed #2b2b36; border-radius:6px;
+      padding:6px; cursor:pointer; transition: all 0.2s; position:relative;
+    }
+    .item-slot:hover { border-color:#00aaff; }
+    .item-slot.filled { border-style:solid; border-color:#00ff88; }
+    .item-slot .empty-item-slot { color:#666; font-size:10px; text-align:center; }
+    .item-slot .item-badge {
+      font-size:9px; padding:4px; border-radius:4px; text-align:center;
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .item-slot .item-badge .item-name { font-weight:600; font-size:10px; }
+    .item-slot .item-badge .item-type { opacity:0.6; font-size:8px; }
+    .item-slot .unequip-btn {
+      position:absolute; top:2px; right:2px; background:#ff4444; color:white;
+      border:none; border-radius:4px; width:16px; height:16px; font-size:10px;
+      cursor:pointer; display:none; padding:0; line-height:16px;
+    }
+    .item-slot.filled:hover .unequip-btn { display:block; }
+
+    .item-card {
+      background:#1a1a24; border:1px solid #2b2b36; border-radius:6px; padding:6px;
+      cursor:pointer; transition: all 0.2s;
+    }
+    .item-card:hover { border-color:#00aaff; background:#1e1e2a; }
+    .item-card.equipped { opacity:0.4; pointer-events:none; }
+    .item-card .item-header {
+      display:flex; align-items:center; gap:6px; margin-bottom:4px;
+    }
+    .item-card .item-icon {
+      width:24px; height:24px; border-radius:4px; flex-shrink:0;
+    }
+    .item-card .item-name { font-weight:600; font-size:11px; flex:1; }
+    .item-card .item-slot-type {
+      font-size:9px; opacity:0.5; background:#14141c; padding:2px 4px; border-radius:3px;
+    }
+    .item-card .item-desc { font-size:10px; opacity:0.7; line-height:1.3; }
+    .item-card.rarity-common { border-left-color:#888; }
+    .item-card.rarity-uncommon { border-left-color:#00ff88; }
+    .item-card.rarity-rare { border-left-color:#00aaff; }
+    .item-card.rarity-epic { border-left-color:#ff00ff; }
   </style>
 
   <!-- Namespaces -->
@@ -153,6 +204,15 @@
           <option value="random">random</option>
         </select>
       </div>
+
+      <div class="section" style="margin-top:16px;">
+        <h3>Match Speed</h3>
+        <div style="display:flex; gap:8px;">
+          <button class="speed-btn" data-speed="1">1x</button>
+          <button class="speed-btn active" data-speed="2">2x</button>
+          <button class="speed-btn" data-speed="4">4x</button>
+        </div>
+      </div>
     </div>
 
     <div id="panel-char-left" style="display:none;">
@@ -181,8 +241,37 @@
 
     <div id="panel-manager-left" style="display:none;">
       <h2>Fighter Roster</h2>
-      <div id="roster-list" style="max-height:600px; overflow-y:auto;">
+      <div style="font-size:10px; opacity:0.5; margin-bottom:8px;">1x Klick = Team hinzufügen | 2x Klick = Items verwalten</div>
+      <div id="roster-list" style="max-height:280px; overflow-y:auto; margin-bottom:16px;">
         <!-- Fighter cards will be added here dynamically -->
+      </div>
+
+      <div class="section" id="item-manager-section" style="display:none;">
+        <h3 style="margin:0 0 8px 0;">Equipment - <span id="selected-fighter-name">---</span></h3>
+
+        <!-- Equipped Items -->
+        <div style="margin-bottom:12px;">
+          <div style="font-size:10px; opacity:0.6; margin-bottom:4px;">EQUIPPED</div>
+          <div id="equipped-slots" style="display:flex; gap:6px; flex-wrap:wrap;">
+            <div class="item-slot" data-slot="0">
+              <div class="empty-item-slot">Slot 1</div>
+            </div>
+            <div class="item-slot" data-slot="1">
+              <div class="empty-item-slot">Slot 2</div>
+            </div>
+            <div class="item-slot" data-slot="2">
+              <div class="empty-item-slot">Slot 3</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Available Items -->
+        <div>
+          <div style="font-size:10px; opacity:0.6; margin-bottom:4px;">AVAILABLE ITEMS</div>
+          <div id="available-items" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
+            <!-- Item cards will be added here dynamically -->
+          </div>
+        </div>
       </div>
     </div>
     <div id="panel-skill-left" style="display:none;">

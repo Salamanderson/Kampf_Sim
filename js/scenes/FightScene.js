@@ -91,6 +91,12 @@
         this._updateCCPreview(def);
       });
 
+      window.addEventListener('VC_SET_GAME_SPEED', (ev)=>{
+        const speed = ev.detail?.speed || 1;
+        this.game.loop.targetFps = 60 * speed;
+        this._gameSpeed = speed;
+      });
+
       // Event-Bus aus Fighter/HitboxSystem
       this.events.on('skill_used',  (info)=>this._onSkillUsed(info));
       this.events.on('heal_used',   (info)=>this._onHealUsed(info));
@@ -162,6 +168,12 @@
       if (this.fighters){ this.fighters.forEach(f=>{ f._hpBg?.destroy(); f._hpFill?.destroy(); f.destroy(); }); }
       this.fighters = [];
       this._matchEnded = false;
+
+      // Match Stats initialisieren
+      this._matchStats = {
+        startTime: Date.now(),
+        fighters: {} // Key: fighter.id, Value: { damageDealt, damageTaken, kills, deaths }
+      };
 
       // Charaktere laden
       const chars = (window.GameData && window.GameData.characters) ? window.GameData.characters : [];
@@ -356,19 +368,40 @@
       const winnerFighters = this.fighters.filter(f=>f.teamId===winner.id.includes('1')?1:2);
       const loserFighters = this.fighters.filter(f=>f.teamId===loser.id.includes('1')?1:2);
 
+      const xpGains = {};
+
       winnerFighters.forEach(f=>{
         const xpGain = 50; // Base XP for winning
+        const oldLevel = f.level;
         f.addXp(xpGain);
         f.trainingPoints += 50;
+        xpGains[f.id] = { xp: xpGain, oldLevel, newLevel: f.level, leveledUp: f.level > oldLevel };
       });
 
       loserFighters.forEach(f=>{
         const xpGain = 20; // Consolation XP
+        const oldLevel = f.level;
         f.addXp(xpGain);
         f.trainingPoints += 20;
+        xpGains[f.id] = { xp: xpGain, oldLevel, newLevel: f.level, leveledUp: f.level > oldLevel };
       });
 
-      // TODO: Show result screen (Iteration 3)
+      // Calculate match duration
+      const duration = Date.now() - this._matchStats.startTime;
+
+      // Send results to Manager Mode
+      if (this._isManagerMatch) {
+        window.dispatchEvent(new CustomEvent('VC_MATCH_END', {
+          detail: {
+            winner: winner.name,
+            loser: loser.name,
+            duration,
+            stats: this._matchStats.fighters,
+            xpGains
+          }
+        }));
+      }
+
       // Don't reset _matchEnded - keep it true until manual restart to prevent duplicate win messages
     },
 
@@ -398,11 +431,39 @@
     },
     _onHit: function({attacker, defender, move, damage}){
       this.log(`${attacker.name} trifft ${defender.name} mit ${move} • DMG ${damage|0}`);
+
+      // Track damage stats
+      if (this._matchStats && this._matchStats.fighters) {
+        if (!this._matchStats.fighters[attacker.id]) {
+          this._matchStats.fighters[attacker.id] = { damageDealt:0, damageTaken:0, kills:0, deaths:0, name:attacker.name };
+        }
+        if (!this._matchStats.fighters[defender.id]) {
+          this._matchStats.fighters[defender.id] = { damageDealt:0, damageTaken:0, kills:0, deaths:0, name:defender.name };
+        }
+        this._matchStats.fighters[attacker.id].damageDealt += damage;
+        this._matchStats.fighters[defender.id].damageTaken += damage;
+      }
+
       if (defender.hp<=0){
         this.events.emit('ko', { winner: attacker, loser: defender });
       }
     },
-    _onKO: function({winner, loser}){ this.log(`KO! ${winner.name} besiegt ${loser.name}`); }
+
+    _onKO: function({winner, loser}){
+      this.log(`KO! ${winner.name} besiegt ${loser.name}`);
+
+      // Track kill/death stats
+      if (this._matchStats && this._matchStats.fighters) {
+        if (!this._matchStats.fighters[winner.id]) {
+          this._matchStats.fighters[winner.id] = { damageDealt:0, damageTaken:0, kills:0, deaths:0, name:winner.name };
+        }
+        if (!this._matchStats.fighters[loser.id]) {
+          this._matchStats.fighters[loser.id] = { damageDealt:0, damageTaken:0, kills:0, deaths:0, name:loser.name };
+        }
+        this._matchStats.fighters[winner.id].kills++;
+        this._matchStats.fighters[loser.id].deaths++;
+      }
+    }
   });
 
   window.Scenes.FightScene = FightScene;

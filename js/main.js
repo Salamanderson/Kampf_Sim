@@ -160,6 +160,20 @@
     document.getElementById('tab-char')?.addEventListener('click', ()=>setActiveTab('tab-char'));
     document.getElementById('tab-skill')?.addEventListener('click', ()=>setActiveTab('tab-skill'));
     document.getElementById('tab-ai')?.addEventListener('click', ()=>setActiveTab('tab-ai'));
+
+    // Speed Control Buttons
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const speed = parseInt(btn.dataset.speed);
+        setGameSpeed(speed);
+        document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }
+
+  function setGameSpeed(speed){
+    window.dispatchEvent(new CustomEvent('VC_SET_GAME_SPEED', { detail: { speed } }));
   }
 
   function initHUDWindow(){
@@ -409,6 +423,23 @@
       card.dataset.charId = char.id;
 
       const colorBadge = `<span class="color-badge" style="background-color:#${char.color.toString(16).padStart(6,'0')}"></span>`;
+
+      // Show equipped items
+      let itemBadges = '';
+      const equippedItems = (char.items || []).filter(id => id);
+      if (equippedItems.length > 0){
+        const itemDefs = window.GameData.items || [];
+        itemBadges = '<div style="margin-top:4px; display:flex; gap:3px;">';
+        equippedItems.forEach(itemId => {
+          const item = itemDefs.find(it => it.id === itemId);
+          if (item){
+            const itemColor = `#${item.color.toString(16).padStart(6,'0')}`;
+            itemBadges += `<span style="width:6px; height:6px; border-radius:50%; background:${itemColor}; display:inline-block;" title="${item.name}"></span>`;
+          }
+        });
+        itemBadges += '</div>';
+      }
+
       card.innerHTML = `
         <div class="name">${colorBadge}${char.name}</div>
         <div class="stats">
@@ -417,12 +448,144 @@
           <span class="stat">ATK ${(char.stats?.physAtk || 1).toFixed(1)}</span>
           <span class="stat">SPD ${char.stats?.moveSpeed || 240}</span>
         </div>
+        ${itemBadges}
       `;
 
       card.addEventListener('click', () => selectFighterForTeam(char.id));
+      card.addEventListener('dblclick', () => showItemManager(char.id));
       list.appendChild(card);
     });
   }
+
+  // === Item Management ===
+  let selectedFighterForItems = null;
+
+  function showItemManager(charId){
+    const char = window.GameData.characters.find(c => c.id === charId);
+    if (!char) return;
+
+    selectedFighterForItems = charId;
+    const section = document.getElementById('item-manager-section');
+    const nameSpan = document.getElementById('selected-fighter-name');
+
+    if (!section || !nameSpan) return;
+
+    nameSpan.textContent = char.name;
+    section.style.display = 'block';
+
+    // Highlight selected fighter in roster
+    document.querySelectorAll('.fighter-card').forEach(c => c.classList.remove('selected'));
+    document.querySelector(`.fighter-card[data-char-id="${charId}"]`)?.classList.add('selected');
+
+    updateEquippedSlots(char);
+    populateAvailableItems(char);
+  }
+
+  function updateEquippedSlots(char){
+    const slotsContainer = document.getElementById('equipped-slots');
+    if (!slotsContainer) return;
+
+    const items = char.items || [];
+    const itemDefs = window.GameData.items || [];
+
+    for (let slot = 0; slot < 3; slot++){
+      const slotEl = slotsContainer.querySelector(`.item-slot[data-slot="${slot}"]`);
+      if (!slotEl) continue;
+
+      const itemId = items[slot];
+      if (itemId){
+        const itemDef = itemDefs.find(it => it.id === itemId);
+        if (itemDef){
+          slotEl.classList.add('filled');
+          slotEl.innerHTML = `
+            <div class="item-badge" style="background-color:#${itemDef.color.toString(16).padStart(6,'0')}33;">
+              <div class="item-name">${itemDef.name}</div>
+              <div class="item-type">${itemDef.slot}</div>
+            </div>
+            <button class="unequip-btn" onclick="unequipItem('${char.id}', ${slot})">×</button>
+          `;
+        }
+      } else {
+        slotEl.classList.remove('filled');
+        slotEl.innerHTML = `<div class="empty-item-slot">Slot ${slot + 1}</div>`;
+        slotEl.onclick = () => {}; // Clear any previous handlers
+      }
+    }
+  }
+
+  function populateAvailableItems(char){
+    const container = document.getElementById('available-items');
+    if (!container) return;
+
+    const items = window.GameData.items || [];
+    const equippedItems = char.items || [];
+
+    container.innerHTML = '';
+
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = `item-card rarity-${item.rarity || 'common'}`;
+      if (equippedItems.includes(item.id)){
+        card.classList.add('equipped');
+      }
+
+      const iconColor = `#${item.color.toString(16).padStart(6,'0')}`;
+      card.innerHTML = `
+        <div class="item-header">
+          <div class="item-icon" style="background-color:${iconColor};"></div>
+          <div class="item-name">${item.name}</div>
+          <div class="item-slot-type">${item.slot}</div>
+        </div>
+        <div class="item-desc">${item.description}</div>
+      `;
+
+      card.addEventListener('click', () => {
+        if (!equippedItems.includes(item.id)){
+          tryEquipItem(char.id, item.id);
+        }
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  function tryEquipItem(charId, itemId){
+    const char = window.GameData.characters.find(c => c.id === charId);
+    if (!char) return;
+
+    // Initialize items array if needed
+    if (!char.items) char.items = [];
+
+    // Find first empty slot
+    let emptySlot = -1;
+    for (let i = 0; i < 3; i++){
+      if (!char.items[i]){
+        emptySlot = i;
+        break;
+      }
+    }
+
+    if (emptySlot === -1){
+      alert('Alle Equipment-Slots sind voll! Entferne zuerst ein Item.');
+      return;
+    }
+
+    // Equip item
+    char.items[emptySlot] = itemId;
+    saveCharactersToLocal();
+    showItemManager(charId); // Refresh display
+  }
+
+  window.unequipItem = function(charId, slot){
+    const char = window.GameData.characters.find(c => c.id === charId);
+    if (!char) return;
+
+    if (!char.items) char.items = [];
+    char.items[slot] = null;
+
+    saveCharactersToLocal();
+    showItemManager(charId); // Refresh display
+  };
 
   function selectFighterForTeam(charId){
     // Find first empty slot
@@ -454,12 +617,30 @@
     } else {
       slotEl.classList.add('filled');
       const colorBadge = `<span class="color-badge" style="background-color:#${char.color.toString(16).padStart(6,'0')}"></span>`;
+
+      // Show equipped items
+      let itemIndicators = '';
+      const equippedItems = (char.items || []).filter(id => id);
+      if (equippedItems.length > 0){
+        const itemDefs = window.GameData.items || [];
+        itemIndicators = '<div style="margin-top:4px; display:flex; gap:3px;">';
+        equippedItems.forEach(itemId => {
+          const item = itemDefs.find(it => it.id === itemId);
+          if (item){
+            const itemColor = `#${item.color.toString(16).padStart(6,'0')}`;
+            itemIndicators += `<span style="width:8px; height:8px; border-radius:50%; background:${itemColor}; display:inline-block;" title="${item.name}"></span>`;
+          }
+        });
+        itemIndicators += '</div>';
+      }
+
       slotEl.innerHTML = `
         <div class="fighter-info">
           ${colorBadge}
           <div>
             <div class="name">${char.name}</div>
             <div class="level">Level ${char.level || 1}</div>
+            ${itemIndicators}
           </div>
         </div>
       `;
@@ -481,6 +662,63 @@
       document.getElementById('match-results').style.display = 'none';
       setActiveTab('tab-manager');
     });
+
+    window.addEventListener('VC_MATCH_END', (ev) => {
+      const data = ev.detail || {};
+      showMatchResults(data);
+    });
+  }
+
+  function showMatchResults(data){
+    const { winner, loser, duration, stats, xpGains } = data;
+    const resultDiv = document.getElementById('result-content');
+    const resultsPanel = document.getElementById('match-results');
+
+    if (!resultDiv || !resultsPanel) return;
+
+    // Format duration
+    const durationSec = (duration / 1000).toFixed(1);
+
+    // Build stats table
+    let html = `
+      <div style="text-align:center; margin-bottom:12px;">
+        <h2 style="color:#00ff88; margin:8px 0;">🏆 ${winner} gewinnt!</h2>
+        <div style="font-size:11px; opacity:0.7;">Match Dauer: ${durationSec}s</div>
+      </div>
+
+      <h4 style="margin:12px 0 8px 0; font-size:12px; color:#7ad7ff;">Match Statistiken:</h4>
+      <table style="width:100%; font-size:11px; border-collapse:collapse;">
+        <tr style="border-bottom:1px solid #2b2b36;">
+          <th style="text-align:left; padding:4px;">Fighter</th>
+          <th style="text-align:center; padding:4px;">DMG</th>
+          <th style="text-align:center; padding:4px;">Kills</th>
+          <th style="text-align:center; padding:4px;">XP</th>
+        </tr>
+    `;
+
+    Object.keys(stats).forEach(fighterId => {
+      const s = stats[fighterId];
+      const xp = xpGains[fighterId];
+      const levelUp = xp && xp.leveledUp ? ` ⬆️ Lvl ${xp.newLevel}` : '';
+      html += `
+        <tr style="border-bottom:1px solid #2b2b36;">
+          <td style="padding:4px;">${s.name}</td>
+          <td style="text-align:center; padding:4px;">${Math.round(s.damageDealt)}</td>
+          <td style="text-align:center; padding:4px;">${s.kills}</td>
+          <td style="text-align:center; padding:4px; ${levelUp ? 'color:#00ff88; font-weight:600;' : ''}">
+            +${xp ? xp.xp : 0}${levelUp}
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `</table>`;
+
+    resultDiv.innerHTML = html;
+    resultsPanel.style.display = 'block';
+
+    // Switch to Manager tab to show results
+    setTimeout(() => setActiveTab('tab-manager'), 500);
   }
 
   function startManagerMatch(){
@@ -508,6 +746,17 @@
         window.GameData = await resp.json();
       }
     }catch(e){ console.warn('characters.json konnte nicht geladen werden, benutze Defaults'); }
+
+    // Items laden
+    try{
+      const resp = await fetch('data/items.json');
+      if (resp.ok){
+        const itemsData = await resp.json();
+        window.GameData.items = itemsData.items || [];
+        console.log('[Main] Loaded', window.GameData.items.length, 'items');
+      }
+    }catch(e){ console.warn('items.json konnte nicht geladen werden'); }
+
     // ggf. lokale Persistenz überschreibt
     loadCharactersFromLocal();
 
