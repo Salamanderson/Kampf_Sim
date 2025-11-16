@@ -275,6 +275,15 @@
         </div>
       </div>
     </div>
+    <div id="panel-char-left" style="display:none;">
+      <h2>Character Creator</h2>
+      <button id="cc-new-char" style="width:100%; padding:10px; background:#00aaff; color:white; border:none; border-radius:6px; margin-bottom:12px; cursor:pointer;">+ Neuen Charakter erstellen</button>
+
+      <h3 style="font-size:13px; margin:12px 0 8px 0;">Vorhandene Charaktere</h3>
+      <div id="cc-char-list" style="max-height:500px; overflow-y:auto;">
+        <!-- Character cards will be populated here -->
+      </div>
+    </div>
     <div id="panel-skill-left" style="display:none;">
       <div class="section"><h3>Skill Creator</h3><p>Platzhalter.</p></div>
     </div>
@@ -305,17 +314,10 @@
       </div>
     </div>
 
-    <div id="panel-char-left" style="display:none;">
-      <h2>Character Creator</h2>
-      <button id="cc-new-char" style="width:100%; padding:10px; background:#00aaff; color:white; border:none; border-radius:6px; margin-bottom:12px; cursor:pointer;">+ Neuen Charakter erstellen</button>
-
-      <h3 style="font-size:13px; margin:12px 0 8px 0;">Vorhandene Charaktere</h3>
-      <div id="cc-char-list" style="max-height:500px; overflow-y:auto;">
-        <!-- Character cards will be populated here -->
-      </div>
-    </div>
-
     <div id="panel-char-right" style="display:none;">
+      <div id="cc-placeholder" style="text-align:center; padding:60px 20px; color:#666;">
+        <p>Wähle einen Charakter zum Editieren<br>oder erstelle einen neuen.</p>
+      </div>
       <div id="cc-form" style="display:none;">
         <h2 id="cc-form-title">Neuen Charakter erstellen</h2>
 
