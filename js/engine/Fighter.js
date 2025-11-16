@@ -58,7 +58,7 @@
     this.color = (typeof cfg.color === 'number') ? cfg.color : 0x7fb2ff;
     this.radius = cfg.radius || 22;
 
-    // Stats
+    // Stats - Save base stats before applying items
     const base = {
       maxHp:100, maxEn:100,
       physAtk:1, energyAtk:1,
@@ -71,7 +71,12 @@
       statusPower:0, statusDuration:1, statusResist:0, statusDurationResist:1,
       damageScale:1.0
     };
-    this.stats = Object.assign({}, base, cfg.stats||{});
+    this.baseStats = Object.assign({}, base, cfg.stats||{});
+    this.stats = Object.assign({}, this.baseStats);
+
+    // Apply item bonuses after stats are set
+    this.applyItemBonuses();
+
     this.maxHp = this.stats.maxHp; this.maxEn = this.stats.maxEn;
     this.hp = this.maxHp; this.en = this.maxEn;
 
@@ -498,18 +503,82 @@
   };
 
   // Item System Helpers
-  Fighter.prototype.getEffectiveStats = function(){
-    const stats = Object.assign({}, this.stats);
+  Fighter.prototype.applyItemBonuses = function(){
+    // Start with base stats
+    const base = {
+      maxHp:100, maxEn:100,
+      physAtk:1, energyAtk:1,
+      attackSpeed:1, castSpeed:1, channelSpeed:1,
+      physRange:1, energyRange:1,
+      accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86,
+      physDef:0, energyDef:0,
+      hpRegen:0, enRegen:0,
+      skillSlots:4, special:null,
+      statusPower:0, statusDuration:1, statusResist:0, statusDurationResist:1,
+      damageScale:1.0
+    };
+
+    // Merge character's base stats
+    this.stats = Object.assign({}, base, this.baseStats||{});
+
     // Apply item bonuses
+    if (!window.GameData?.items) return;
+
+    let appliedItems = 0;
     for (let i=0; i<this.items.length; i++){
-      const item = this.items[i];
-      if (item && item.statBonus){
-        for (const key of Object.keys(item.statBonus)){
-          stats[key] = (stats[key]||0) + item.statBonus[key];
+      const itemId = this.items[i];
+      if (!itemId) continue;
+
+      const itemDef = window.GameData.items.find(it => it.id === itemId);
+      if (!itemDef || !itemDef.stats) continue;
+
+      console.log(`[Fighter] ${this.name} applying item:`, itemDef.name, itemDef.stats);
+      appliedItems++;
+
+      for (const key of Object.keys(itemDef.stats)){
+        const bonus = itemDef.stats[key];
+        const oldValue = this.stats[key];
+
+        // Multiplicative bonuses (decimal values like 0.2 = +20%)
+        if (typeof bonus === 'number' && bonus > -1 && bonus < 5 &&
+            ['physAtk','energyAtk','attackSpeed','castSpeed','channelSpeed',
+             'physRange','energyRange','moveSpeed','dashSpeed'].includes(key)){
+          this.stats[key] = (this.stats[key] || 0) * (1 + bonus);
+        } else {
+          // Additive bonuses (flat values like +30 HP)
+          this.stats[key] = (this.stats[key] || 0) + bonus;
+        }
+
+        if (oldValue !== this.stats[key]){
+          console.log(`[Fighter] ${this.name} ${key}: ${oldValue} -> ${this.stats[key]}`);
         }
       }
     }
-    return stats;
+
+    if (appliedItems > 0){
+      console.log(`[Fighter] ${this.name} final stats after ${appliedItems} items:`, {
+        maxHp: this.stats.maxHp,
+        physAtk: this.stats.physAtk.toFixed(2),
+        energyAtk: this.stats.energyAtk.toFixed(2),
+        moveSpeed: this.stats.moveSpeed.toFixed(1)
+      });
+    }
+
+    // Update maxHp/maxEn references
+    this.maxHp = this.stats.maxHp;
+    this.maxEn = this.stats.maxEn;
+  };
+
+  Fighter.prototype.equipItem = function(itemId, slot){
+    if (slot < 0 || slot > 2) return;
+    this.items[slot] = itemId;
+    this.applyItemBonuses();
+  };
+
+  Fighter.prototype.unequipItem = function(slot){
+    if (slot < 0 || slot > 2) return;
+    this.items[slot] = null;
+    this.applyItemBonuses();
   };
 
   window.Engine.Fighter = Fighter;

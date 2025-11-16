@@ -16,7 +16,7 @@
         "positioning": 5,
         "energyManagement": 5
       },
-      "items": [],
+      "items": ["berserker_blade", "speed_boots"],
       "stats": { "maxHp": 120, "maxEn": 100, "physAtk":1.1, "energyAtk":1, "attackSpeed":1.1, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1900, "moveSpeed": 250, "dashSpeed": 580, "friction": 0.86, "physDef":0, "energyDef":0, "hpRegen":0, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
       "loadout": ["slash","dash_strike","whirlwind","quick_heal"]
     },
@@ -56,7 +56,7 @@
         "positioning": 6,
         "energyManagement": 7
       },
-      "items": [],
+      "items": ["tank_armor", "regen_ring", "hp_amulet"],
       "stats": { "maxHp": 150, "maxEn": 90, "physAtk":1.2, "energyAtk":0.9, "attackSpeed":0.85, "castSpeed":1, "channelSpeed":1, "physRange":1, "energyRange":1, "accel": 1700, "moveSpeed": 225, "dashSpeed": 520, "friction": 0.86, "physDef":15, "energyDef":8, "hpRegen":0.8, "enRegen":0, "skillSlots":4, "special":null, "statusPower":0, "statusDuration":1, "statusResist":0, "statusDurationResist":1, "damageScale": 1.0 },
       "loadout": ["punch","ground_slam","fortify","self_heal"]
     },
