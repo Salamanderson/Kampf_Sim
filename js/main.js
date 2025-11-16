@@ -187,6 +187,8 @@
         populateCharCreatorList();
         // Always refresh skill selector (in case new skills were created)
         populateSkillLoadoutSelector();
+        // Always refresh AI profile selector
+        populateAIProfileSelector();
         mode = 'char_creator';
       } else if (id === 'tab-manager'){
         document.getElementById('panel-manager-left').style.display='block';
