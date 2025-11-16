@@ -275,13 +275,17 @@
         </div>
       </div>
     </div>
+    <!-- Character Creator - LEFT PANEL -->
     <div id="panel-char-left" style="display:none;">
-      <h2>Character Creator</h2>
-      <button id="cc-new-char" style="width:100%; padding:10px; background:#00aaff; color:white; border:none; border-radius:6px; margin-bottom:12px; cursor:pointer;">+ Neuen Charakter erstellen</button>
+      <h2 style="margin:0 0 12px 0; color:#00aaff;">Character Creator</h2>
 
-      <h3 style="font-size:13px; margin:12px 0 8px 0;">Vorhandene Charaktere</h3>
+      <button id="cc-new-char" style="width:100%; padding:10px; background:#00aaff; color:white; border:none; border-radius:6px; margin-bottom:16px; cursor:pointer; font-weight:600;">
+        + Neuen Charakter erstellen
+      </button>
+
+      <h3 style="font-size:13px; margin:0 0 8px 0; opacity:0.7;">Vorhandene Charaktere</h3>
       <div id="cc-char-list" style="max-height:500px; overflow-y:auto;">
-        <!-- Character cards will be populated here -->
+        <!-- Character cards will be populated here dynamically -->
       </div>
     </div>
     <div id="panel-skill-left" style="display:none;">
@@ -314,12 +318,16 @@
       </div>
     </div>
 
+    <!-- Character Creator - RIGHT PANEL -->
     <div id="panel-char-right" style="display:none;">
+      <!-- Placeholder (shown when no character selected) -->
       <div id="cc-placeholder" style="text-align:center; padding:60px 20px; color:#666;">
-        <p>Wähle einen Charakter zum Editieren<br>oder erstelle einen neuen.</p>
+        <p>← Wähle einen Charakter zum Editieren<br>oder erstelle einen neuen</p>
       </div>
+
+      <!-- Edit Form (hidden initially) -->
       <div id="cc-form" style="display:none;">
-        <h2 id="cc-form-title">Neuen Charakter erstellen</h2>
+        <h2 id="cc-form-title" style="margin:0 0 12px 0; color:#00ff88;">Neuen Charakter erstellen</h2>
 
         <!-- Basic Info -->
         <div class="section">
@@ -424,13 +432,13 @@
 
         <!-- Action Buttons -->
         <div class="section">
-          <button id="cc-save" style="width:100%; padding:12px; background:#00ff88; color:#0f0f16; font-weight:600; border:none; border-radius:6px; cursor:pointer; margin-bottom:8px;">Speichern</button>
-          <button id="cc-cancel" style="width:100%; padding:10px; background:#2b2b36; color:#eaeaf0; border:none; border-radius:6px; cursor:pointer;">Abbrechen</button>
+          <button id="cc-save" style="width:100%; padding:12px; background:#00ff88; color:#0f0f16; font-weight:600; border:none; border-radius:6px; cursor:pointer; margin-bottom:8px;">
+            💾 Speichern
+          </button>
+          <button id="cc-cancel" style="width:100%; padding:10px; background:#2b2b36; color:#eaeaf0; border:none; border-radius:6px; cursor:pointer;">
+            ✕ Abbrechen
+          </button>
         </div>
-      </div>
-
-      <div id="cc-placeholder" style="text-align:center; padding:60px 20px; color:#666;">
-        <p>Wähle einen Charakter zum Editieren oder erstelle einen neuen</p>
       </div>
     </div>
 
