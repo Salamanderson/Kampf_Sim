@@ -233,7 +233,7 @@
           teamId: 1,
           x: pos.x,
           y: pos.y,
-          controllerProfile: this._uiOpts.p1 || 'aggressive'
+          controllerProfile: def.aiProfile || this._uiOpts.p1 || 'aggressive'
         }));
         console.log('[FightScene] Fighter created, moves=', Object.keys(f.moves));
         // Attach UI bars
@@ -253,7 +253,7 @@
           teamId: 2,
           x: pos.x,
           y: pos.y,
-          controllerProfile: this._uiOpts.p2 || 'defensive'
+          controllerProfile: def.aiProfile || this._uiOpts.p2 || 'defensive'
         }));
         // Attach UI bars
         f._uiHpBar = document.getElementById(`t2f${i+1}-hp-fill`);
