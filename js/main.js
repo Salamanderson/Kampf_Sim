@@ -1187,6 +1187,12 @@
 
   // ----- Boot -----
   window.addEventListener('load', async ()=>{
+    // DEVELOPMENT: Clear all localStorage on every start
+    // This ensures fresh data from JSON files
+    // COMMENT OUT in production to keep saved data!
+    localStorage.clear();
+    console.log('[Main] localStorage cleared - using fresh JSON data');
+
     // Daten laden
     try{
       const resp = await fetch('data/characters.json');
@@ -1216,12 +1222,8 @@
       }
     }catch(e){ console.warn('skills.json konnte nicht geladen werden'); }
 
-    // Clear skills cache on every start (for development)
-    localStorage.removeItem('vibecode_skills');
-
-    // ggf. lokale Persistenz überschreibt
-    loadCharactersFromLocal();
-    // loadSkillsFromLocal(); // Disabled - always use fresh skills.json
+    // localStorage already cleared above - no need to load from local
+    // All data comes fresh from JSON files
 
     populateCharacterSelects();
     bindHeader();
