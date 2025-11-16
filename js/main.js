@@ -109,10 +109,8 @@
         document.getElementById('panel-char-left').style.display='block';
         document.getElementById('panel-char-right').style.display='block';
         populateCharCreatorList();
-        // Ensure skill selector is populated
-        if (!document.querySelector('.cc-skill-checkbox')){
-          populateSkillLoadoutSelector();
-        }
+        // Always refresh skill selector (in case new skills were created)
+        populateSkillLoadoutSelector();
         mode = 'char_creator';
       } else if (id === 'tab-manager'){
         document.getElementById('panel-manager-left').style.display='block';
@@ -431,16 +429,11 @@
     const container = document.getElementById('cc-loadout-selector');
     if (!container) return;
 
-    // We'll use the skills from the defaultMoves in Fighter.js
-    const availableSkills = [
-      'slash', 'power_strike', 'whirlwind', 'dash_strike',
-      'poke', 'snipe', 'shield_bash', 'retreat',
-      'ground_slam', 'punch',
-      'guard', 'area_heal', 'quick_heal', 'self_heal', 'fortify'
-    ];
+    // Get all skills from GameData
+    const skills = window.GameData.skills || [];
 
     container.innerHTML = '';
-    availableSkills.forEach(skillId => {
+    skills.forEach(skill => {
       const label = document.createElement('label');
       label.style.display = 'flex';
       label.style.alignItems = 'center';
@@ -451,12 +444,11 @@
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'cc-skill-checkbox';
-      checkbox.dataset.skillId = skillId;
+      checkbox.dataset.skillId = skill.id;
 
-      const skillName = skillId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       const skillNameSpan = document.createElement('span');
       skillNameSpan.style.flex = '1';
-      skillNameSpan.textContent = skillName;
+      skillNameSpan.textContent = skill.name || skill.id;
 
       // Limit to 4 skills
       checkbox.addEventListener('change', (e) => {
@@ -764,7 +756,8 @@
     // Equip item
     char.items[emptySlot] = itemId;
     saveCharactersToLocal();
-    showItemManager(charId); // Refresh display
+    showItemManager(charId); // Refresh item manager
+    populateRoster(); // Update roster list to show item badges
   }
 
   window.unequipItem = function(charId, slot){
@@ -775,7 +768,8 @@
     char.items[slot] = null;
 
     saveCharactersToLocal();
-    showItemManager(charId); // Refresh display
+    showItemManager(charId); // Refresh item manager
+    populateRoster(); // Update roster list to show item badges
   };
 
   function selectFighterForTeam(charId){
