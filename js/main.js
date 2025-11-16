@@ -99,6 +99,10 @@
         document.getElementById('panel-char-left').style.display='block';
         document.getElementById('panel-char-right').style.display='block';
         populateCharCreatorList();
+        // Ensure skill selector is populated
+        if (!document.querySelector('.cc-skill-checkbox')){
+          populateSkillLoadoutSelector();
+        }
         mode = 'char_creator';
       } else if (id === 'tab-manager'){
         document.getElementById('panel-manager-left').style.display='block';
@@ -234,10 +238,14 @@
 
   function populateCharCreatorList(){
     const list = document.getElementById('cc-char-list');
-    if (!list) return;
+    if (!list) {
+      console.warn('[CharCreator] cc-char-list element not found');
+      return;
+    }
 
     const chars = window.GameData.characters || [];
     list.innerHTML = '';
+    console.log('[CharCreator] Populating list with', chars.length, 'characters');
 
     chars.forEach(char => {
       const card = document.createElement('div');
@@ -256,17 +264,31 @@
         </div>
       `;
 
-      card.addEventListener('click', () => loadCharacterForEdit(char.id));
+      card.addEventListener('click', () => {
+        console.log('[CharCreator] Card clicked:', char.id);
+        loadCharacterForEdit(char.id);
+      });
       list.appendChild(card);
     });
   }
 
   function loadCharacterForEdit(charId){
+    console.log('[CharCreator] loadCharacterForEdit called with:', charId);
     const char = window.GameData.characters.find(c => c.id === charId);
-    if (!char) return;
+    if (!char) {
+      console.error('[CharCreator] Character not found:', charId);
+      return;
+    }
 
+    console.log('[CharCreator] Loading character:', char.name);
     ccCurrentCharId = charId;
     ccEditMode = true;
+
+    // Ensure skill selector is populated
+    if (!document.querySelector('.cc-skill-checkbox')){
+      console.log('[CharCreator] Skill selector not found, populating...');
+      populateSkillLoadoutSelector();
+    }
 
     // Load data into form
     document.getElementById('cc-name').value = char.name || '';
@@ -297,12 +319,16 @@
 
     // Loadout
     const loadout = char.loadout || [];
-    document.querySelectorAll('.cc-skill-checkbox').forEach(cb => {
+    console.log('[CharCreator] Setting loadout:', loadout);
+    const checkboxes = document.querySelectorAll('.cc-skill-checkbox');
+    console.log('[CharCreator] Found', checkboxes.length, 'checkboxes');
+    checkboxes.forEach(cb => {
       cb.checked = loadout.includes(cb.dataset.skillId);
     });
 
     showCharCreatorForm(true);
     document.getElementById('cc-form-title').textContent = `Editieren: ${char.name}`;
+    console.log('[CharCreator] Form displayed');
   }
 
   function setSliderValue(id, value){
@@ -372,11 +398,12 @@
       checkbox.dataset.skillId = skillId;
 
       const skillName = skillId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-
-      label.innerHTML = `<input type="checkbox" class="cc-skill-checkbox" data-skill-id="${skillId}"/> <span style="flex:1;">${skillName}</span>`;
+      const skillNameSpan = document.createElement('span');
+      skillNameSpan.style.flex = '1';
+      skillNameSpan.textContent = skillName;
 
       // Limit to 4 skills
-      label.querySelector('input').addEventListener('change', (e) => {
+      checkbox.addEventListener('change', (e) => {
         const checked = document.querySelectorAll('.cc-skill-checkbox:checked');
         if (checked.length > 4){
           e.target.checked = false;
@@ -384,6 +411,8 @@
         }
       });
 
+      label.appendChild(checkbox);
+      label.appendChild(skillNameSpan);
       container.appendChild(label);
     });
   }
