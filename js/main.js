@@ -109,10 +109,8 @@
         document.getElementById('panel-char-left').style.display='block';
         document.getElementById('panel-char-right').style.display='block';
         populateCharCreatorList();
-        // Ensure skill selector is populated
-        if (!document.querySelector('.cc-skill-checkbox')){
-          populateSkillLoadoutSelector();
-        }
+        // Always refresh skill selector (in case new skills were created)
+        populateSkillLoadoutSelector();
         mode = 'char_creator';
       } else if (id === 'tab-manager'){
         document.getElementById('panel-manager-left').style.display='block';
@@ -122,6 +120,7 @@
       } else if (id === 'tab-skill'){
         document.getElementById('panel-skill-left').style.display='block';
         document.getElementById('panel-skill-right').style.display='block';
+        populateSkillList();
         mode = 'skill_creator';
       } else if (id === 'tab-ai'){
         document.getElementById('panel-ai-left').style.display='block';
@@ -430,16 +429,11 @@
     const container = document.getElementById('cc-loadout-selector');
     if (!container) return;
 
-    // We'll use the skills from the defaultMoves in Fighter.js
-    const availableSkills = [
-      'slash', 'power_strike', 'whirlwind', 'dash_strike',
-      'poke', 'snipe', 'shield_bash', 'retreat',
-      'ground_slam', 'punch',
-      'guard', 'area_heal', 'quick_heal', 'self_heal', 'fortify'
-    ];
+    // Get all skills from GameData
+    const skills = window.GameData.skills || [];
 
     container.innerHTML = '';
-    availableSkills.forEach(skillId => {
+    skills.forEach(skill => {
       const label = document.createElement('label');
       label.style.display = 'flex';
       label.style.alignItems = 'center';
@@ -450,12 +444,11 @@
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'cc-skill-checkbox';
-      checkbox.dataset.skillId = skillId;
+      checkbox.dataset.skillId = skill.id;
 
-      const skillName = skillId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       const skillNameSpan = document.createElement('span');
       skillNameSpan.style.flex = '1';
-      skillNameSpan.textContent = skillName;
+      skillNameSpan.textContent = skill.name || skill.id;
 
       // Limit to 4 skills
       checkbox.addEventListener('change', (e) => {
@@ -566,13 +559,11 @@
   }
 
   function saveCharactersToLocal(){
-    try{ localStorage.setItem('vibecode_characters', JSON.stringify(window.GameData)); }catch(e){}
+    // Save all data when characters change
+    saveAllDataToLocal();
   }
   function loadCharactersFromLocal(){
-    try{
-      const s = localStorage.getItem('vibecode_characters');
-      if (s){ const d = JSON.parse(s); if (d && Array.isArray(d.characters)) window.GameData = d; }
-    }catch(e){}
+    // No longer used - all data loaded via loadAllDataToLocal()
   }
 
   // ----- Manager Mode -----
@@ -765,7 +756,8 @@
     // Equip item
     char.items[emptySlot] = itemId;
     saveCharactersToLocal();
-    showItemManager(charId); // Refresh display
+    showItemManager(charId); // Refresh item manager
+    populateRoster(); // Update roster list to show item badges
   }
 
   window.unequipItem = function(charId, slot){
@@ -776,7 +768,8 @@
     char.items[slot] = null;
 
     saveCharactersToLocal();
-    showItemManager(charId); // Refresh display
+    showItemManager(charId); // Refresh item manager
+    populateRoster(); // Update roster list to show item badges
   };
 
   function selectFighterForTeam(charId){
@@ -929,34 +922,339 @@
     }));
   }
 
+  // ----- Skill Creator -----
+  let scCurrentSkillId = null;
+  let scEditMode = false;
+
+  function bindSkillCreatorUI(){
+    // New skill button
+    document.getElementById('sc-new-skill')?.addEventListener('click', () => {
+      scCurrentSkillId = null;
+      scEditMode = false;
+      clearSkillCreatorForm();
+
+      // Create default template for new skill
+      const defaultSkill = {
+        id: 'new_skill',
+        name: 'Neuer Skill',
+        type: 'physical',
+        category: 'basic',
+        description: 'Beschreibung hier',
+        stats: {
+          startup: 5,
+          active: 3,
+          recovery: 7,
+          damage: 10,
+          hitstun: 10,
+          hitstop: 5,
+          range: 50,
+          radius: 20,
+          color: 16777215
+        }
+      };
+
+      generateDynamicForm(defaultSkill);
+      showSkillCreatorForm(true);
+      document.getElementById('sc-form-title').textContent = 'Neuen Skill erstellen';
+    });
+
+    // Save button
+    document.getElementById('sc-save')?.addEventListener('click', saveSkill);
+
+    // Cancel button
+    document.getElementById('sc-cancel')?.addEventListener('click', () => {
+      showSkillCreatorForm(false);
+      scCurrentSkillId = null;
+      scEditMode = false;
+    });
+  }
+
+  function populateSkillList(){
+    const list = document.getElementById('sc-skill-list');
+    if (!list) return;
+
+    const skills = window.GameData.skills || [];
+    list.innerHTML = '';
+
+    skills.forEach((skill) => {
+      const card = document.createElement('div');
+      card.className = 'fighter-card';
+      card.style.cursor = 'pointer';
+      card.dataset.skillId = skill.id;
+
+      const category = window.GameData.skillCategories[skill.category] || {};
+      const catColor = category.color || '#aaa';
+      const colorBadge = skill.stats?.color
+        ? `<span class="color-badge" style="background-color:#${skill.stats.color.toString(16).padStart(6,'0')}"></span>`
+        : '';
+
+      card.innerHTML = `
+        <div class="name">${colorBadge}${skill.name} <span style="color:${catColor}; font-size:10px;">${skill.category.toUpperCase()}</span></div>
+        <div class="stats">
+          <span class="stat">${skill.type}</span>
+          ${skill.stats?.damage ? `<span class="stat">DMG ${skill.stats.damage}</span>` : ''}
+          ${skill.stats?.heal ? `<span class="stat">HEAL ${skill.stats.heal}</span>` : ''}
+        </div>
+      `;
+
+      card.onclick = () => loadSkillForEdit(skill.id);
+      list.appendChild(card);
+    });
+  }
+
+  function loadSkillForEdit(skillId){
+    const skill = window.GameData.skills.find(s => s.id === skillId);
+    if (!skill) return;
+
+    scCurrentSkillId = skillId;
+    scEditMode = true;
+
+    generateDynamicForm(skill);
+    showSkillCreatorForm(true);
+    document.getElementById('sc-form-title').textContent = `Editieren: ${skill.name}`;
+  }
+
+  function generateDynamicForm(skill){
+    const container = document.getElementById('sc-dynamic-fields');
+    if (!container) return;
+
+    container.innerHTML = '';
+    generateFieldsForObject(skill, container, '');
+  }
+
+  function generateFieldsForObject(obj, container, prefix){
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      const fullKey = prefix ? `${prefix}.${key}` : key;
+
+      if (key === 'id' && !prefix) return; // Keep ID fixed
+
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)){
+        // Nested object - create section
+        const section = document.createElement('div');
+        section.className = 'section';
+        section.style.marginBottom = '12px';
+
+        const heading = document.createElement('h3');
+        heading.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+        section.appendChild(heading);
+
+        generateFieldsForObject(value, section, fullKey);
+        container.appendChild(section);
+      } else if (!Array.isArray(value)){
+        // Primitive value - create input field
+        createField(container, key, fullKey, value, detectFieldType(key, value));
+      }
+    });
+  }
+
+  function detectFieldType(key, value){
+    if (key === 'color' || key.endsWith('Color')) return 'color';
+    if (typeof value === 'boolean') return 'checkbox';
+    if (typeof value === 'number') return 'number';
+    return 'text';
+  }
+
+  function createField(container, label, fullKey, value, type){
+    const row = document.createElement('div');
+    row.className = 'row-inline';
+    row.style.marginBottom = '8px';
+
+    const labelEl = document.createElement('label');
+    labelEl.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+    labelEl.style.width = '120px';
+
+    let inputEl;
+
+    if (type === 'checkbox'){
+      inputEl = document.createElement('input');
+      inputEl.type = 'checkbox';
+      inputEl.checked = !!value;
+    } else if (type === 'color'){
+      inputEl = document.createElement('input');
+      inputEl.type = 'color';
+      inputEl.value = '#' + (value || 0).toString(16).padStart(6, '0');
+    } else if (type === 'number'){
+      inputEl = document.createElement('input');
+      inputEl.type = 'number';
+      inputEl.value = value || 0;
+      inputEl.style.flex = '1';
+      inputEl.style.minWidth = '50px';
+    } else {
+      inputEl = document.createElement('input');
+      inputEl.type = 'text';
+      inputEl.value = value || '';
+      inputEl.style.flex = '1';
+    }
+
+    inputEl.dataset.fieldKey = fullKey;
+    row.appendChild(labelEl);
+    row.appendChild(inputEl);
+    container.appendChild(row);
+  }
+
+  function showSkillCreatorForm(show){
+    document.getElementById('sc-form').style.display = show ? 'block' : 'none';
+    document.getElementById('sc-placeholder').style.display = show ? 'none' : 'block';
+  }
+
+  function clearSkillCreatorForm(){
+    const container = document.getElementById('sc-dynamic-fields');
+    if (container) container.innerHTML = '';
+  }
+
+  function saveSkill(){
+    const fields = document.querySelectorAll('[data-field-key]');
+    const skillData = {};
+
+    fields.forEach(field => {
+      const key = field.dataset.fieldKey;
+      let value;
+
+      if (field.type === 'checkbox'){
+        value = field.checked;
+      } else if (field.type === 'color'){
+        value = parseInt(field.value.substring(1), 16);
+      } else if (field.type === 'number'){
+        value = parseFloat(field.value) || 0;
+      } else {
+        value = field.value;
+      }
+
+      setNestedProperty(skillData, key, value);
+    });
+
+    if (!skillData.id){
+      skillData.id = scEditMode ? scCurrentSkillId : generateSkillId(skillData.name || 'new_skill');
+    }
+
+    const skills = window.GameData.skills || [];
+    if (scEditMode){
+      const idx = skills.findIndex(s => s.id === scCurrentSkillId);
+      if (idx >= 0) skills[idx] = skillData;
+    } else {
+      skills.push(skillData);
+    }
+
+    window.GameData.skills = skills;
+    saveSkillsToLocal();
+    populateSkillList();
+
+    showSkillCreatorForm(false);
+    scCurrentSkillId = null;
+    scEditMode = false;
+
+    alert(`Skill "${skillData.name || skillData.id}" wurde gespeichert!`);
+  }
+
+  function setNestedProperty(obj, path, value){
+    const parts = path.split('.');
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i++){
+      if (!current[parts[i]]) current[parts[i]] = {};
+      current = current[parts[i]];
+    }
+    current[parts[parts.length - 1]] = value;
+  }
+
+  function generateSkillId(name){
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 20) + '_' + Date.now().toString(36);
+  }
+
+  function saveSkillsToLocal(){
+    // Save all data when skills change
+    saveAllDataToLocal();
+  }
+
+  function loadSkillsFromLocal(){
+    // No longer used - all data loaded via loadAllDataToLocal()
+  }
+
+  function saveAllDataToLocal(){
+    try{
+      const dataToSave = {
+        characters: window.GameData.characters || [],
+        skills: window.GameData.skills || [],
+        skillCategories: window.GameData.skillCategories || {},
+        items: window.GameData.items || []
+      };
+      localStorage.setItem('vibecode_all_data', JSON.stringify(dataToSave));
+    }catch(e){
+      console.warn('Could not save data to localStorage');
+    }
+  }
+
+  function loadAllDataFromLocal(){
+    try{
+      const saved = localStorage.getItem('vibecode_all_data');
+      if (saved){
+        const data = JSON.parse(saved);
+        window.GameData = window.GameData || {};
+        window.GameData.characters = data.characters || [];
+        window.GameData.skills = data.skills || [];
+        window.GameData.skillCategories = data.skillCategories || {};
+        window.GameData.items = data.items || [];
+      }
+    }catch(e){
+      console.warn('Could not load data from localStorage');
+    }
+  }
+
   // ----- Boot -----
   window.addEventListener('load', async ()=>{
-    // Daten laden
-    try{
-      const resp = await fetch('data/characters.json');
-      if (resp.ok){
-        window.GameData = await resp.json();
-      }
-    }catch(e){ console.warn('characters.json konnte nicht geladen werden, benutze Defaults'); }
+    // Check if we have data in localStorage
+    const hasLocalData = localStorage.getItem('vibecode_data_initialized');
 
-    // Items laden
-    try{
-      const resp = await fetch('data/items.json');
-      if (resp.ok){
-        const itemsData = await resp.json();
-        window.GameData.items = itemsData.items || [];
-        console.log('[Main] Loaded', window.GameData.items.length, 'items');
-      }
-    }catch(e){ console.warn('items.json konnte nicht geladen werden'); }
+    if (!hasLocalData){
+      // FIRST RUN: Load from JSON and save to localStorage
+      console.log('[Main] First run - loading defaults from JSON files');
 
-    // ggf. lokale Persistenz überschreibt
-    loadCharactersFromLocal();
+      // Load base data from JSON files
+      try{
+        const resp = await fetch('data/characters.json');
+        if (resp.ok){
+          window.GameData = await resp.json();
+        }
+      }catch(e){ console.warn('characters.json konnte nicht geladen werden'); }
+
+      // Items laden
+      try{
+        const resp = await fetch('data/items.json');
+        if (resp.ok){
+          const itemsData = await resp.json();
+          window.GameData.items = itemsData.items || [];
+        }
+      }catch(e){ console.warn('items.json konnte nicht geladen werden'); }
+
+      // Load skills.json
+      try{
+        const skillResp = await fetch('data/skills.json');
+        if (skillResp.ok){
+          const skillsData = await skillResp.json();
+          window.GameData.skills = skillsData.skills || [];
+          window.GameData.skillCategories = skillsData.categories || {};
+        }
+      }catch(e){ console.warn('skills.json konnte nicht geladen werden'); }
+
+      // Save to localStorage for future use
+      saveAllDataToLocal();
+      localStorage.setItem('vibecode_data_initialized', 'true');
+      console.log('[Main] Initial data saved to localStorage');
+      console.log('[Main] Total:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items');
+
+    } else {
+      // SUBSEQUENT RUNS: Load everything from localStorage
+      console.log('[Main] Loading all data from localStorage');
+      loadAllDataFromLocal();
+      console.log('[Main] Loaded:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items');
+    }
 
     populateCharacterSelects();
     bindHeader();
     setupSkillButtons();
     bindCharCreatorUI();
     bindManagerMode();
+    bindSkillCreatorUI();
     initHUDWindow();
 
     // Start Game
