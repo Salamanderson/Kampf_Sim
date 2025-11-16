@@ -90,6 +90,16 @@
       document.querySelectorAll('#ui-left > div').forEach(d=>d.style.display='none');
       document.querySelectorAll('#ui-right > div').forEach(d=>d.style.display='none');
 
+      // Control game canvas pointer events - disable for UI-heavy tabs
+      const gameRoot = document.getElementById('game-root');
+      if (gameRoot) {
+        if (id === 'tab-sim') {
+          gameRoot.style.pointerEvents = 'auto';
+        } else {
+          gameRoot.style.pointerEvents = 'none';
+        }
+      }
+
       let mode = 'simulator';
       if (id === 'tab-sim'){
         document.getElementById('panel-sim-left').style.display='block';
@@ -98,7 +108,11 @@
       } else if (id === 'tab-char'){
         document.getElementById('panel-char-left').style.display='block';
         document.getElementById('panel-char-right').style.display='block';
-        startCharCreatorPreviewFromSelection();
+        populateCharCreatorList();
+        // Ensure skill selector is populated
+        if (!document.querySelector('.cc-skill-checkbox')){
+          populateSkillLoadoutSelector();
+        }
         mode = 'char_creator';
       } else if (id === 'tab-manager'){
         document.getElementById('panel-manager-left').style.display='block';
@@ -192,208 +206,363 @@
     function up(){ dragging=false; document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); }
   }
 
-  // ----- Char Creator: State & Live-Preview -----
-  let ccState = null; // aktueller Entwurf
 
-  function currentCCDef(){
-    // Aus Eingabefeldern lesen
-    const hex  = document.getElementById('cc-color').value||'#64c8ff';
-    const color= parseInt(hex.slice(1), 16);
-    const loadout = [];
-    if (document.getElementById('cc-skill-light').checked) loadout.push('light');
-    if (document.getElementById('cc-skill-heavy').checked) loadout.push('heavy');
-    if (document.getElementById('cc-skill-spin').checked)  loadout.push('spin');
-    if (document.getElementById('cc-skill-heal').checked)  loadout.push('heal');
+  // ----- Character Creator -----
+  let ccCurrentCharId = null;
+  let ccEditMode = false;
 
-    return {
-      id: (document.getElementById('cc-name').value||'custom').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'') || 'custom',
-      name: document.getElementById('cc-name').value || 'Custom',
-      shape: document.getElementById('cc-shape').value || 'circle',
-      color, radius: parseInt(document.getElementById('cc-radius').value||'22',10),
+  function bindCharCreatorUI(){
+    populateCharCreatorList();
+    populateSkillLoadoutSelector();
+
+    // Personality sliders - update value display
+    ['agg', 'team', 'risk', 'pos', 'energy'].forEach(trait => {
+      const slider = document.getElementById(`cc-pers-${trait}`);
+      const valSpan = document.getElementById(`cc-pers-${trait}-val`);
+      if (slider && valSpan){
+        slider.addEventListener('input', () => {
+          valSpan.textContent = slider.value;
+        });
+      }
+    });
+
+    // New character button
+    document.getElementById('cc-new-char')?.addEventListener('click', () => {
+      ccCurrentCharId = null;
+      ccEditMode = false;
+      clearCharCreatorForm();
+      showCharCreatorForm(true);
+      document.getElementById('cc-form-title').textContent = 'Neuen Charakter erstellen';
+    });
+
+    // Save button
+    document.getElementById('cc-save')?.addEventListener('click', saveCharacter);
+
+    // Cancel button
+    document.getElementById('cc-cancel')?.addEventListener('click', () => {
+      showCharCreatorForm(false);
+      ccCurrentCharId = null;
+      ccEditMode = false;
+    });
+
+    // Live preview update when color changes
+    document.getElementById('cc-color')?.addEventListener('input', () => {
+      if (ccCurrentCharId) {
+        updateLivePreview();
+      }
+    });
+  }
+
+  function updateLivePreview(){
+    if (!ccCurrentCharId) return;
+
+    const char = window.GameData.characters.find(c => c.id === ccCurrentCharId);
+    if (!char) return;
+
+    // Get current form values
+    const colorHex = document.getElementById('cc-color').value;
+    const color = parseInt(colorHex.substring(1), 16);
+
+    // Create updated character object for preview
+    const previewChar = Object.assign({}, char, {
+      color: color,
+      name: document.getElementById('cc-name').value || char.name,
+      role: document.getElementById('cc-role').value || char.role
+    });
+
+    // Send update to arena
+    window.dispatchEvent(new CustomEvent('VC_CC_UPDATE', { detail: { def: previewChar } }));
+  }
+
+  function populateCharCreatorList(){
+    const list = document.getElementById('cc-char-list');
+    if (!list) {
+      console.warn('[CharCreator] cc-char-list element not found');
+      return;
+    }
+
+    const chars = window.GameData.characters || [];
+    list.innerHTML = '';
+    console.log('[CharCreator] Populating list with', chars.length, 'characters');
+
+    chars.forEach((char, index) => {
+      const card = document.createElement('div');
+      card.className = 'fighter-card';
+      card.style.cursor = 'pointer';
+      card.style.userSelect = 'none';
+      card.dataset.charId = char.id;
+
+      const roleInfo = getRoleInfo(char.role);
+      const colorBadge = `<span class="color-badge" style="background-color:#${char.color.toString(16).padStart(6,'0')}"></span>`;
+
+      card.innerHTML = `
+        <div class="name">${colorBadge}${char.name} <span style="color:${roleInfo.color};">${roleInfo.icon}</span></div>
+        <div class="stats">
+          <span class="stat">Lvl ${char.level || 1}</span>
+          <span class="stat">HP ${char.stats?.maxHp || 100}</span>
+          <span class="stat">${roleInfo.symbol}</span>
+        </div>
+      `;
+
+      // Use onclick property for more reliable event handling
+      const charIdCopy = char.id; // Capture in closure
+      card.onclick = function(e) {
+        console.log('[CharCreator] Card clicked!', charIdCopy, e);
+        e.stopPropagation();
+        loadCharacterForEdit(charIdCopy);
+      };
+
+      list.appendChild(card);
+      console.log('[CharCreator] Card added:', index, char.name, char.id);
+    });
+
+    console.log('[CharCreator] List populated. Total cards:', list.children.length);
+
+    // Test: Add a click listener to the list itself to see if ANY clicks are detected
+    list.onclick = function(e) {
+      console.log('[CharCreator] List container clicked, target:', e.target);
+    };
+  }
+
+  function loadCharacterForEdit(charId){
+    console.log('[CharCreator] loadCharacterForEdit called with:', charId);
+    const char = window.GameData.characters.find(c => c.id === charId);
+    if (!char) {
+      console.error('[CharCreator] Character not found:', charId);
+      return;
+    }
+
+    console.log('[CharCreator] Loading character:', char.name);
+    ccCurrentCharId = charId;
+    ccEditMode = true;
+
+    // Send preview to arena
+    window.dispatchEvent(new CustomEvent('VC_CC_UPDATE', { detail: { def: char } }));
+
+    // Ensure skill selector is populated
+    if (!document.querySelector('.cc-skill-checkbox')){
+      console.log('[CharCreator] Skill selector not found, populating...');
+      populateSkillLoadoutSelector();
+    }
+
+    // Load data into form
+    document.getElementById('cc-name').value = char.name || '';
+    document.getElementById('cc-role').value = char.role || 'Aggressive';
+    document.getElementById('cc-color').value = '#' + (char.color || 0x64c8ff).toString(16).padStart(6, '0');
+    document.getElementById('cc-level').value = char.level || 1;
+
+    // Personality
+    const pers = char.personality || {};
+    setSliderValue('cc-pers-agg', pers.aggression || 5);
+    setSliderValue('cc-pers-team', pers.teamplay || 5);
+    setSliderValue('cc-pers-risk', pers.riskTaking || 5);
+    setSliderValue('cc-pers-pos', pers.positioning || 5);
+    setSliderValue('cc-pers-energy', pers.energyManagement || 5);
+
+    // Stats
+    const stats = char.stats || {};
+    document.getElementById('cc-maxhp').value = stats.maxHp || 100;
+    document.getElementById('cc-maxen').value = stats.maxEn || 100;
+    document.getElementById('cc-physatk').value = stats.physAtk || 1;
+    document.getElementById('cc-physdef').value = stats.physDef || 0;
+    document.getElementById('cc-enatk').value = stats.energyAtk || 1;
+    document.getElementById('cc-endef').value = stats.energyDef || 0;
+    document.getElementById('cc-speed').value = stats.moveSpeed || 240;
+    document.getElementById('cc-dash').value = stats.dashSpeed || 560;
+    document.getElementById('cc-hpreg').value = stats.hpRegen || 0;
+    document.getElementById('cc-enreg').value = stats.enRegen || 0;
+
+    // Loadout
+    const loadout = char.loadout || [];
+    console.log('[CharCreator] Setting loadout:', loadout);
+    const checkboxes = document.querySelectorAll('.cc-skill-checkbox');
+    console.log('[CharCreator] Found', checkboxes.length, 'checkboxes');
+    checkboxes.forEach(cb => {
+      cb.checked = loadout.includes(cb.dataset.skillId);
+    });
+
+    showCharCreatorForm(true);
+    document.getElementById('cc-form-title').textContent = `Editieren: ${char.name}`;
+    console.log('[CharCreator] Form displayed');
+  }
+
+  function setSliderValue(id, value){
+    const slider = document.getElementById(id);
+    const valSpan = document.getElementById(id + '-val');
+    if (slider){
+      slider.value = value;
+      if (valSpan) valSpan.textContent = value;
+    }
+  }
+
+  function clearCharCreatorForm(){
+    document.getElementById('cc-name').value = '';
+    document.getElementById('cc-role').value = 'Aggressive';
+    document.getElementById('cc-color').value = '#64c8ff';
+    document.getElementById('cc-level').value = 1;
+
+    setSliderValue('cc-pers-agg', 5);
+    setSliderValue('cc-pers-team', 5);
+    setSliderValue('cc-pers-risk', 5);
+    setSliderValue('cc-pers-pos', 5);
+    setSliderValue('cc-pers-energy', 5);
+
+    document.getElementById('cc-maxhp').value = 100;
+    document.getElementById('cc-maxen').value = 100;
+    document.getElementById('cc-physatk').value = 1;
+    document.getElementById('cc-physdef').value = 0;
+    document.getElementById('cc-enatk').value = 1;
+    document.getElementById('cc-endef').value = 0;
+    document.getElementById('cc-speed').value = 240;
+    document.getElementById('cc-dash').value = 560;
+    document.getElementById('cc-hpreg').value = 0;
+    document.getElementById('cc-enreg').value = 0;
+
+    document.querySelectorAll('.cc-skill-checkbox').forEach(cb => cb.checked = false);
+  }
+
+  function showCharCreatorForm(show){
+    document.getElementById('cc-form').style.display = show ? 'block' : 'none';
+    document.getElementById('cc-placeholder').style.display = show ? 'none' : 'block';
+  }
+
+  function populateSkillLoadoutSelector(){
+    const container = document.getElementById('cc-loadout-selector');
+    if (!container) return;
+
+    // We'll use the skills from the defaultMoves in Fighter.js
+    const availableSkills = [
+      'slash', 'power_strike', 'whirlwind', 'dash_strike',
+      'poke', 'snipe', 'shield_bash', 'retreat',
+      'ground_slam', 'punch',
+      'guard', 'area_heal', 'quick_heal', 'self_heal', 'fortify'
+    ];
+
+    container.innerHTML = '';
+    availableSkills.forEach(skillId => {
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.gap = '8px';
+      label.style.padding = '4px';
+      label.style.cursor = 'pointer';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'cc-skill-checkbox';
+      checkbox.dataset.skillId = skillId;
+
+      const skillName = skillId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const skillNameSpan = document.createElement('span');
+      skillNameSpan.style.flex = '1';
+      skillNameSpan.textContent = skillName;
+
+      // Limit to 4 skills
+      checkbox.addEventListener('change', (e) => {
+        const checked = document.querySelectorAll('.cc-skill-checkbox:checked');
+        if (checked.length > 4){
+          e.target.checked = false;
+          alert('Maximal 4 Skills erlaubt!');
+        }
+      });
+
+      label.appendChild(checkbox);
+      label.appendChild(skillNameSpan);
+      container.appendChild(label);
+    });
+  }
+
+  function saveCharacter(){
+    const name = document.getElementById('cc-name').value.trim();
+    if (!name){
+      alert('Bitte gib einen Namen ein!');
+      return;
+    }
+
+    // Collect loadout
+    const loadout = Array.from(document.querySelectorAll('.cc-skill-checkbox:checked'))
+      .map(cb => cb.dataset.skillId);
+
+    if (loadout.length === 0){
+      alert('Bitte wähle mindestens 1 Skill aus!');
+      return;
+    }
+
+    const colorHex = document.getElementById('cc-color').value;
+    const color = parseInt(colorHex.substring(1), 16);
+
+    const charData = {
+      id: ccEditMode ? ccCurrentCharId : generateCharId(name),
+      name: name,
+      role: document.getElementById('cc-role').value,
+      shape: 'circle',
+      color: color,
+      radius: 22,
+      level: parseInt(document.getElementById('cc-level').value) || 1,
+      xp: 0,
+      trainingPoints: 0,
+      personality: {
+        aggression: parseInt(document.getElementById('cc-pers-agg').value),
+        teamplay: parseInt(document.getElementById('cc-pers-team').value),
+        riskTaking: parseInt(document.getElementById('cc-pers-risk').value),
+        positioning: parseInt(document.getElementById('cc-pers-pos').value),
+        energyManagement: parseInt(document.getElementById('cc-pers-energy').value)
+      },
+      items: [],
       stats: {
-        maxHp: parseInt(document.getElementById('cc-maxhp').value||'120',10),
-        maxEn: parseInt(document.getElementById('cc-maxen').value||'100',10),
-        physAtk: parseFloat(document.getElementById('cc-physatk').value||'1'),
-        energyAtk: parseFloat(document.getElementById('cc-enatk').value||'1'),
-        attackSpeed: parseFloat(document.getElementById('cc-atkspd').value||'1'),
-        castSpeed: parseFloat(document.getElementById('cc-castspd').value||'1'),
-        channelSpeed: parseFloat(document.getElementById('cc-chanspd').value||'1'),
-        physRange: parseFloat(document.getElementById('cc-physrng').value||'1'),
-        energyRange: parseFloat(document.getElementById('cc-enrng').value||'1'),
-        accel: parseFloat(document.getElementById('cc-accel').value||'1800'),
-        moveSpeed: parseFloat(document.getElementById('cc-speed').value||'240'),
-        dashSpeed: parseFloat(document.getElementById('cc-dash').value||'560'),
-        friction: parseFloat(document.getElementById('cc-fric').value||'0.86'),
-        physDef: parseFloat(document.getElementById('cc-physdef').value||'0'),
-        energyDef: parseFloat(document.getElementById('cc-endef').value||'0'),
-        hpRegen: parseFloat(document.getElementById('cc-hpreg').value||'0'),
-        enRegen: parseFloat(document.getElementById('cc-enreg').value||'0'),
-        skillSlots: parseInt(document.getElementById('cc-slots').value||'4',10),
-        special: document.getElementById('cc-special').value || null,
-        statusPower: parseFloat(document.getElementById('cc-stapow').value||'0'),
-        statusDuration: parseFloat(document.getElementById('cc-stadur').value||'1'),
-        statusResist: parseFloat(document.getElementById('cc-stares').value||'0'),
-        statusDurationResist: parseFloat(document.getElementById('cc-stadurres').value||'1'),
+        maxHp: parseFloat(document.getElementById('cc-maxhp').value) || 100,
+        maxEn: parseFloat(document.getElementById('cc-maxen').value) || 100,
+        physAtk: parseFloat(document.getElementById('cc-physatk').value) || 1,
+        energyAtk: parseFloat(document.getElementById('cc-enatk').value) || 1,
+        attackSpeed: 1,
+        castSpeed: 1,
+        channelSpeed: 1,
+        physRange: 1,
+        energyRange: 1,
+        accel: 1800,
+        moveSpeed: parseFloat(document.getElementById('cc-speed').value) || 240,
+        dashSpeed: parseFloat(document.getElementById('cc-dash').value) || 560,
+        friction: 0.86,
+        physDef: parseFloat(document.getElementById('cc-physdef').value) || 0,
+        energyDef: parseFloat(document.getElementById('cc-endef').value) || 0,
+        hpRegen: parseFloat(document.getElementById('cc-hpreg').value) || 0,
+        enRegen: parseFloat(document.getElementById('cc-enreg').value) || 0,
+        skillSlots: 4,
+        special: null,
+        statusPower: 0,
+        statusDuration: 1,
+        statusResist: 0,
+        statusDurationResist: 1,
         damageScale: 1.0
       },
-      loadout
+      loadout: loadout
     };
-  }
 
-  function applyCCDefToForm(def){
-    document.getElementById('cc-name').value = def.name || '';
-    document.getElementById('cc-shape').value= def.shape || 'circle';
-    document.getElementById('cc-color').value= '#'+('000000'+(def.color>>>0).toString(16)).slice(-6);
-    document.getElementById('cc-radius').value= def.radius || 22;
-    document.getElementById('cc-maxhp').value = def.stats?.maxHp ?? 120;
-    document.getElementById('cc-maxen').value = def.stats?.maxEn ?? 100;
-    document.getElementById('cc-accel').value = def.stats?.accel ?? 1800;
-    document.getElementById('cc-speed').value = def.stats?.moveSpeed ?? 240;
-    document.getElementById('cc-dash').value  = def.stats?.dashSpeed ?? 560;
-    document.getElementById('cc-fric').value  = def.stats?.friction ?? 0.86;
-    document.getElementById('cc-physatk').value = def.stats?.physAtk ?? 1;
-    document.getElementById('cc-enatk').value  = def.stats?.energyAtk ?? 1;
-    document.getElementById('cc-atkspd').value = def.stats?.attackSpeed ?? 1;
-    document.getElementById('cc-castspd').value= def.stats?.castSpeed ?? 1;
-    document.getElementById('cc-chanspd').value= def.stats?.channelSpeed ?? 1;
-    document.getElementById('cc-physrng').value= def.stats?.physRange ?? 1;
-    document.getElementById('cc-enrng').value = def.stats?.energyRange ?? 1;
-    document.getElementById('cc-physdef').value= def.stats?.physDef ?? 0;
-    document.getElementById('cc-endef').value = def.stats?.energyDef ?? 0;
-    document.getElementById('cc-hpreg').value = def.stats?.hpRegen ?? 0;
-    document.getElementById('cc-enreg').value = def.stats?.enRegen ?? 0;
-    document.getElementById('cc-slots').value  = def.stats?.skillSlots ?? 4;
-    document.getElementById('cc-special').value= def.stats?.special ?? '';
-    document.getElementById('cc-stapow').value = def.stats?.statusPower ?? 0;
-    document.getElementById('cc-stadur').value = def.stats?.statusDuration ?? 1;
-    document.getElementById('cc-stares').value = def.stats?.statusResist ?? 0;
-    document.getElementById('cc-stadurres').value = def.stats?.statusDurationResist ?? 1;
-    const set = new Set(def.loadout||[]);
-    document.getElementById('cc-skill-light').checked = set.has('light');
-    document.getElementById('cc-skill-heavy').checked = set.has('heavy');
-    document.getElementById('cc-skill-spin').checked  = set.has('spin');
-    document.getElementById('cc-skill-heal').checked  = set.has('heal');
-  }
-
-  function emitCCUpdate(){
-    ccState = currentCCDef();
-    window.dispatchEvent(new CustomEvent('VC_CC_UPDATE', { detail:{ def: ccState }}));
-  }
-
-  function startCharCreatorPreviewFromSelection(){
-    // Standard: nehme aktuell gewählten P1-Char als Vorlage
-    const id = document.getElementById('p1char')?.value;
     const chars = window.GameData.characters || [];
-    const def = chars.find(c=>c.id===id) || chars[0] || {
-      id:'custom', name:'Custom', shape:'circle', color:0x64c8ff, radius:22,
-      stats:{
-        maxHp:120, maxEn:100,
-        physAtk:1, energyAtk:1,
-        attackSpeed:1, castSpeed:1, channelSpeed:1,
-        physRange:1, energyRange:1,
-        accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86,
-        physDef:0, energyDef:0,
-        hpRegen:0, enRegen:0,
-        skillSlots:4, special:null,
-        statusPower:0, statusDuration:1, statusResist:0, statusDurationResist:1,
-        damageScale:1.0
-      },
-      loadout:['light','heavy','spin','heal']
-    };
-    applyCCDefToForm(def);
-    document.getElementById('cc-load').value = def.id;
-    emitCCUpdate();
+    if (ccEditMode){
+      const idx = chars.findIndex(c => c.id === ccCurrentCharId);
+      if (idx >= 0){
+        chars[idx] = charData;
+      }
+    } else {
+      chars.push(charData);
+    }
+
+    window.GameData.characters = chars;
+    saveCharactersToLocal();
+    populateCharacterSelects();
+    populateCharCreatorList();
+    populateRoster();
+
+    showCharCreatorForm(false);
+    ccCurrentCharId = null;
+    ccEditMode = false;
+
+    alert(`Charakter "${name}" wurde gespeichert!`);
   }
 
-    function bindCharCreatorUI(){
-    // Eingaben -> Realtime Preview
-    ['cc-name','cc-shape','cc-color','cc-radius','cc-maxhp','cc-maxen','cc-physatk','cc-enatk','cc-atkspd','cc-castspd','cc-chanspd',
-     'cc-physrng','cc-enrng','cc-accel','cc-speed','cc-dash','cc-fric','cc-physdef','cc-endef','cc-hpreg','cc-enreg','cc-slots','cc-special',
-     'cc-stapow','cc-stadur','cc-stares','cc-stadurres','cc-skill-light','cc-skill-heavy','cc-skill-spin','cc-skill-heal'
-    ].forEach(id=>{
-      const el = document.getElementById(id);
-      el?.addEventListener('input', emitCCUpdate);
-      el?.addEventListener('change', emitCCUpdate);
-    });
-
-    // Auswahl/CRUD
-    document.getElementById('cc-load')?.addEventListener('change', ()=>{
-      const id = document.getElementById('cc-load').value;
-      const def = (window.GameData.characters||[]).find(c=>c.id===id);
-      if (def){ applyCCDefToForm(def); emitCCUpdate(); }
-    });
-
-    document.getElementById('cc-new')?.addEventListener('click', ()=>{
-      applyCCDefToForm({
-        id:'custom', name:'Custom', shape:'circle', color:0x64c8ff, radius:22,
-        stats:{
-          maxHp:120, maxEn:100,
-          physAtk:1, energyAtk:1,
-          attackSpeed:1, castSpeed:1, channelSpeed:1,
-          physRange:1, energyRange:1,
-          accel:1800, moveSpeed:240, dashSpeed:560, friction:0.86,
-          physDef:0, energyDef:0,
-          hpRegen:0, enRegen:0,
-          skillSlots:4, special:null,
-          statusPower:0, statusDuration:1, statusResist:0, statusDurationResist:1,
-          damageScale:1.0
-        },
-        loadout:['light','heavy','spin','heal']
-      });
-      emitCCUpdate();
-    });
-
-    document.getElementById('cc-duplicate')?.addEventListener('click', ()=>{
-      const base = currentCCDef();
-      base.id = (base.id+'_copy').slice(0,40);
-      base.name = base.name + ' Copy';
-      applyCCDefToForm(base);
-      emitCCUpdate();
-    });
-
-    document.getElementById('cc-delete')?.addEventListener('click', ()=>{
-      const id = currentCCDef().id;
-      const arr = window.GameData.characters;
-      const idx = arr.findIndex(c=>c.id===id);
-      if (idx>=0){ arr.splice(idx,1); saveCharactersToLocal(); populateCharacterSelects(); startCharCreatorPreviewFromSelection(); }
-    });
-
-    document.getElementById('cc-save')?.addEventListener('click', ()=>{
-      const def = currentCCDef();
-      const arr = window.GameData.characters;
-      const idx = arr.findIndex(c=>c.id===def.id);
-      if (idx>=0) arr[idx]=def; else arr.push(def);
-      saveCharactersToLocal();
-      populateCharacterSelects();
-      document.getElementById('cc-load').value = def.id;
-    });
-
-    document.getElementById('cc-use-p1')?.addEventListener('click', ()=>{
-      const def = currentCCDef();
-      const arr = window.GameData.characters;
-      const idx = arr.findIndex(c=>c.id===def.id);
-      if (idx>=0) arr[idx]=def; else arr.push(def);
-      saveCharactersToLocal(); populateCharacterSelects();
-      const p1sel = document.getElementById('p1char'); if (p1sel) p1sel.value = def.id;
-      document.getElementById('btn-start')?.click();
-      setActiveTab('tab-sim');
-    });
-
-    document.getElementById('cc-use-p2')?.addEventListener('click', ()=>{
-      const def = currentCCDef();
-      const arr = window.GameData.characters;
-      const idx = arr.findIndex(c=>c.id===def.id);
-      if (idx>=0) arr[idx]=def; else arr.push(def);
-      saveCharactersToLocal(); populateCharacterSelects();
-      const p2sel = document.getElementById('p2char'); if (p2sel) p2sel.value = def.id;
-      document.getElementById('btn-start')?.click();
-      setActiveTab('tab-sim');
-    });
-
-    document.getElementById('cc-export')?.addEventListener('click', ()=>{
-      const blob = new Blob([JSON.stringify(window.GameData, null, 2)], {type:'application/json'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'characters.json'; a.click(); URL.revokeObjectURL(a.href);
-    });
+  function generateCharId(name){
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 20) + '_' + Date.now().toString(36);
   }
 
   function saveCharactersToLocal(){
@@ -413,12 +582,12 @@
   // Role icons and colors
   function getRoleInfo(role){
     const roleMap = {
-      'Aggressive': { icon: '⚔️', color: '#ff5555', name: 'Aggressive' },
-      'Support': { icon: '✨', color: '#77ddff', name: 'Support' },
-      'Tank': { icon: '🛡️', color: '#ffaa55', name: 'Tank' },
-      'Assassin': { icon: '🗡️', color: '#ff88ff', name: 'Assassin' }
+      'Aggressive': { icon: '⚔', color: '#ff5555', name: 'Aggressive', symbol: 'AGG' },
+      'Support': { icon: '✦', color: '#77ddff', name: 'Support', symbol: 'SUP' },
+      'Tank': { icon: '▣', color: '#ffaa55', name: 'Tank', symbol: 'TNK' },
+      'Assassin': { icon: '⚡', color: '#ff88ff', name: 'Assassin', symbol: 'ASN' }
     };
-    return roleMap[role] || { icon: '❓', color: '#888888', name: role || 'Unknown' };
+    return roleMap[role] || { icon: '?', color: '#888888', name: role || 'Unknown', symbol: '???' };
   }
 
   function populateRoster(){

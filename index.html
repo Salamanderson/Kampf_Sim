@@ -215,30 +215,6 @@
       </div>
     </div>
 
-    <div id="panel-char-left" style="display:none;">
-      <div class="center-grid">
-        <div class="section">
-          <h3>Charakter wählen / laden</h3>
-          <div class="row"><label>Vorlage</label><select id="cc-load"></select></div>
-          <div class="row-inline">
-            <button id="cc-new">Neu</button>
-            <button id="cc-duplicate">Duplizieren</button>
-            <button id="cc-delete">Löschen</button>
-          </div>
-        </div>
-        <div class="section">
-          <h3>Aktionen</h3>
-          <div class="row-inline">
-            <button id="cc-save">Speichern</button>
-            <button id="cc-use-p1">Als P1 nutzen</button>
-            <button id="cc-use-p2">Als P2 nutzen</button>
-            <button id="cc-export">Export JSON</button>
-          </div>
-          <small>Speichern legt/aktualisiert den Charakter in der Datenbank (auch localStorage). „Nutzen“ startet sofort ein Match.</small>
-        </div>
-      </div>
-    </div>
-
     <div id="panel-manager-left" style="display:none;">
       <h2>Fighter Roster</h2>
       <div style="font-size:10px; opacity:0.5; margin-bottom:8px;">1x Klick = Items verwalten | 2x Klick = Team hinzufügen</div>
@@ -275,6 +251,19 @@
         </div>
       </div>
     </div>
+    <!-- Character Creator - LEFT PANEL -->
+    <div id="panel-char-left" style="display:none;">
+      <h2 style="margin:0 0 12px 0; color:#00aaff;">Character Creator</h2>
+
+      <button id="cc-new-char" style="width:100%; padding:10px; background:#00aaff; color:white; border:none; border-radius:6px; margin-bottom:16px; cursor:pointer; font-weight:600;">
+        + Neuen Charakter erstellen
+      </button>
+
+      <h3 style="font-size:13px; margin:0 0 8px 0; opacity:0.7;">Vorhandene Charaktere</h3>
+      <div id="cc-char-list" style="max-height:500px; overflow-y:auto;">
+        <!-- Character cards will be populated here dynamically -->
+      </div>
+    </div>
     <div id="panel-skill-left" style="display:none;">
       <div class="section"><h3>Skill Creator</h3><p>Platzhalter.</p></div>
     </div>
@@ -305,58 +294,126 @@
       </div>
     </div>
 
+    <!-- Character Creator - RIGHT PANEL -->
     <div id="panel-char-right" style="display:none;">
-      <div class="center-grid">
+      <!-- Placeholder (shown when no character selected) -->
+      <div id="cc-placeholder" style="text-align:center; padding:60px 20px; color:#666;">
+        <p>← Wähle einen Charakter zum Editieren<br>oder erstelle einen neuen</p>
+      </div>
+
+      <!-- Edit Form (hidden initially) -->
+      <div id="cc-form" style="display:none;">
+        <h2 id="cc-form-title" style="margin:0 0 12px 0; color:#00ff88;">Neuen Charakter erstellen</h2>
+
+        <!-- Basic Info -->
         <div class="section">
           <h3>Basisdaten</h3>
-          <div class="row"><label>Name</label><input id="cc-name" type="text" placeholder="z. B. Nova"/></div>
-          <div class="row-inline" style="width:100%;">
+          <div class="row">
+            <label>Name</label>
+            <input id="cc-name" type="text" placeholder="z. B. Nova"/>
+          </div>
+          <div class="row">
+            <label>Rolle</label>
+            <select id="cc-role">
+              <option value="Aggressive">Aggressive ⚔</option>
+              <option value="Support">Support ✦</option>
+              <option value="Tank">Tank ▣</option>
+              <option value="Assassin">Assassin ⚡</option>
+            </select>
+          </div>
+          <div class="row-inline">
             <div style="flex:1">
-              <label>Form</label>
-              <select id="cc-shape"><option value="circle">Kreis</option><option value="square">Quadrat</option><option value="triangle">Dreieck</option></select>
+              <label>Farbe</label>
+              <input id="cc-color" type="color" value="#64c8ff"/>
             </div>
-            <div style="width:120px">
-              <label>Farbe</label><input id="cc-color" type="color" value="#64c8ff"/>
+            <div style="flex:1">
+              <label>Level</label>
+              <input id="cc-level" type="number" min="1" max="99" value="1"/>
             </div>
           </div>
-          <div class="row"><label>Radius</label><input id="cc-radius" type="range" min="14" max="36" value="22"/></div>
         </div>
 
+        <!-- Personality -->
+        <div class="section">
+          <h3>Personality (1-10)</h3>
+          <div class="row-inline">
+            <label style="width:120px">Aggression</label>
+            <input id="cc-pers-agg" type="range" min="1" max="10" value="5"/>
+            <span id="cc-pers-agg-val" style="width:25px; text-align:center;">5</span>
+          </div>
+          <div class="row-inline">
+            <label style="width:120px">Teamplay</label>
+            <input id="cc-pers-team" type="range" min="1" max="10" value="5"/>
+            <span id="cc-pers-team-val" style="width:25px; text-align:center;">5</span>
+          </div>
+          <div class="row-inline">
+            <label style="width:120px">Risk Taking</label>
+            <input id="cc-pers-risk" type="range" min="1" max="10" value="5"/>
+            <span id="cc-pers-risk-val" style="width:25px; text-align:center;">5</span>
+          </div>
+          <div class="row-inline">
+            <label style="width:120px">Positioning</label>
+            <input id="cc-pers-pos" type="range" min="1" max="10" value="5"/>
+            <span id="cc-pers-pos-val" style="width:25px; text-align:center;">5</span>
+          </div>
+          <div class="row-inline">
+            <label style="width:120px">Energy Mgmt</label>
+            <input id="cc-pers-energy" type="range" min="1" max="10" value="5"/>
+            <span id="cc-pers-energy-val" style="width:25px; text-align:center;">5</span>
+          </div>
+        </div>
+
+        <!-- Stats -->
         <div class="section">
           <h3>Stats</h3>
-          <div class="row-inline"><label style="width:100px">HP</label><input id="cc-maxhp" type="number" value="120"/></div>
-          <div class="row-inline"><label style="width:100px">EN</label><input id="cc-maxen" type="number" value="100"/></div>
-          <div class="row-inline"><label style="width:100px">Accel</label><input id="cc-accel" type="number" value="1800"/></div>
-          <div class="row-inline"><label style="width:100px">Speed</label><input id="cc-speed" type="number" value="240"/></div>
-          <div class="row-inline"><label style="width:100px">Dash</label><input id="cc-dash" type="number" value="560"/></div>
-          <div class="row-inline"><label style="width:100px">Friction</label><input id="cc-fric" type="number" step="0.01" value="0.86"/></div>
-          <div class="row-inline"><label style="width:100px">PhysAtk</label><input id="cc-physatk" type="number" step="0.1" value="1"/></div>
-          <div class="row-inline"><label style="width:100px">EnAtk</label><input id="cc-enatk" type="number" step="0.1" value="1"/></div>
-          <div class="row-inline"><label style="width:100px">AtkSpd</label><input id="cc-atkspd" type="number" step="0.1" value="1"/></div>
-          <div class="row-inline"><label style="width:100px">CastSpd</label><input id="cc-castspd" type="number" step="0.1" value="1"/></div>
-          <div class="row-inline"><label style="width:100px">ChanSpd</label><input id="cc-chanspd" type="number" step="0.1" value="1"/></div>
-          <div class="row-inline"><label style="width:100px">PhysRange</label><input id="cc-physrng" type="number" step="0.1" value="1"/></div>
-          <div class="row-inline"><label style="width:100px">EnRange</label><input id="cc-enrng" type="number" step="0.1" value="1"/></div>
-          <div class="row-inline"><label style="width:100px">PhysDef</label><input id="cc-physdef" type="number" step="0.1" value="0"/></div>
-          <div class="row-inline"><label style="width:100px">EnDef</label><input id="cc-endef" type="number" step="0.1" value="0"/></div>
-          <div class="row-inline"><label style="width:100px">HPRegen</label><input id="cc-hpreg" type="number" step="0.1" value="0"/></div>
-          <div class="row-inline"><label style="width:100px">EnRegen</label><input id="cc-enreg" type="number" step="0.1" value="0"/></div>
-          <div class="row-inline"><label style="width:100px">SkillSlots</label><input id="cc-slots" type="number" value="4"/></div>
-          <div class="row-inline"><label style="width:100px">Special</label><input id="cc-special" type="text"/></div>
-          <div class="row-inline"><label style="width:100px">SE Power</label><input id="cc-stapow" type="number" step="0.1" value="0"/></div>
-          <div class="row-inline"><label style="width:100px">SE Dur</label><input id="cc-stadur" type="number" step="0.1" value="1"/></div>
-          <div class="row-inline"><label style="width:100px">SE Resist</label><input id="cc-stares" type="number" step="0.1" value="0"/></div>
-          <div class="row-inline"><label style="width:100px">SE DurRes</label><input id="cc-stadurres" type="number" step="0.1" value="1"/></div>
+          <div class="row-inline">
+            <label style="width:90px">HP</label>
+            <input id="cc-maxhp" type="number" value="100" style="flex:1; min-width:50px"/>
+            <label style="width:90px; margin-left:8px">Energy</label>
+            <input id="cc-maxen" type="number" value="100" style="flex:1; min-width:50px"/>
+          </div>
+          <div class="row-inline">
+            <label style="width:90px">Phys Atk</label>
+            <input id="cc-physatk" type="number" step="0.1" value="1.0" style="flex:1; min-width:50px"/>
+            <label style="width:90px; margin-left:8px">Phys Def</label>
+            <input id="cc-physdef" type="number" step="1" value="0" style="flex:1; min-width:50px"/>
+          </div>
+          <div class="row-inline">
+            <label style="width:90px">Energy Atk</label>
+            <input id="cc-enatk" type="number" step="0.1" value="1.0" style="flex:1; min-width:50px"/>
+            <label style="width:90px; margin-left:8px">Energy Def</label>
+            <input id="cc-endef" type="number" step="1" value="0" style="flex:1; min-width:50px"/>
+          </div>
+          <div class="row-inline">
+            <label style="width:90px">Move Speed</label>
+            <input id="cc-speed" type="number" value="240" style="flex:1; min-width:50px"/>
+            <label style="width:90px; margin-left:8px">Dash Speed</label>
+            <input id="cc-dash" type="number" value="560" style="flex:1; min-width:50px"/>
+          </div>
+          <div class="row-inline">
+            <label style="width:90px">HP Regen</label>
+            <input id="cc-hpreg" type="number" step="0.1" value="0" style="flex:1; min-width:50px"/>
+            <label style="width:90px; margin-left:8px">EN Regen</label>
+            <input id="cc-enreg" type="number" step="0.1" value="0" style="flex:1; min-width:50px"/>
+          </div>
         </div>
 
-        <div class="section" style="grid-column: 1 / span 2;">
-          <h3>Skill-Loadout</h3>
-          <div class="row-inline" style="flex-wrap:wrap">
-            <label style="width:auto"><input type="checkbox" id="cc-skill-light" checked/> Light</label>
-            <label style="width:auto"><input type="checkbox" id="cc-skill-heavy" checked/> Heavy</label>
-            <label style="width:auto"><input type="checkbox" id="cc-skill-spin"  checked/> Spin</label>
-            <label style="width:auto"><input type="checkbox" id="cc-skill-heal"  checked/> Heal</label>
+        <!-- Skill Loadout -->
+        <div class="section">
+          <h3>Skill Loadout (max 4)</h3>
+          <div id="cc-loadout-selector" style="display:flex; flex-direction:column; gap:6px;">
+            <!-- Will be populated dynamically -->
           </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="section">
+          <button id="cc-save" style="width:100%; padding:12px; background:#00ff88; color:#0f0f16; font-weight:600; border:none; border-radius:6px; cursor:pointer; margin-bottom:8px;">
+            💾 Speichern
+          </button>
+          <button id="cc-cancel" style="width:100%; padding:10px; background:#2b2b36; color:#eaeaf0; border:none; border-radius:6px; cursor:pointer;">
+            ✕ Abbrechen
+          </button>
         </div>
       </div>
     </div>
