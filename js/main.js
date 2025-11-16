@@ -940,6 +940,28 @@
       scCurrentSkillId = null;
       scEditMode = false;
       clearSkillCreatorForm();
+
+      // Create default template for new skill
+      const defaultSkill = {
+        id: 'new_skill',
+        name: 'Neuer Skill',
+        type: 'physical',
+        category: 'basic',
+        description: 'Beschreibung hier',
+        stats: {
+          startup: 5,
+          active: 3,
+          recovery: 7,
+          damage: 10,
+          hitstun: 10,
+          hitstop: 5,
+          range: 50,
+          radius: 20,
+          color: 16777215
+        }
+      };
+
+      generateDynamicForm(defaultSkill);
       showSkillCreatorForm(true);
       document.getElementById('sc-form-title').textContent = 'Neuen Skill erstellen';
     });
@@ -1194,9 +1216,12 @@
       }
     }catch(e){ console.warn('skills.json konnte nicht geladen werden'); }
 
+    // Clear skills cache on every start (for development)
+    localStorage.removeItem('vibecode_skills');
+
     // ggf. lokale Persistenz überschreibt
     loadCharactersFromLocal();
-    loadSkillsFromLocal();
+    // loadSkillsFromLocal(); // Disabled - always use fresh skills.json
 
     populateCharacterSelects();
     bindHeader();
