@@ -264,8 +264,18 @@
         <!-- Character cards will be populated here dynamically -->
       </div>
     </div>
+    <!-- Skill Creator - LEFT PANEL -->
     <div id="panel-skill-left" style="display:none;">
-      <div class="section"><h3>Skill Creator</h3><p>Platzhalter.</p></div>
+      <h2 style="margin:0 0 12px 0; color:#ffaa00;">Skill Creator</h2>
+
+      <button id="sc-new-skill" style="width:100%; padding:10px; background:#ffaa00; color:#0f0f16; font-weight:600; border:none; border-radius:6px; margin-bottom:16px; cursor:pointer;">
+        + Neuen Skill erstellen
+      </button>
+
+      <h3 style="font-size:13px; margin:0 0 8px 0; opacity:0.7;">Vorhandene Skills</h3>
+      <div id="sc-skill-list" style="max-height:500px; overflow-y:auto;">
+        <!-- Skill cards will be populated here dynamically -->
+      </div>
     </div>
     <div id="panel-ai-left" style="display:none;">
       <div class="section"><h3>KI Creator</h3><p>Platzhalter.</p></div>
@@ -453,8 +463,32 @@
         </button>
       </div>
     </div>
+    <!-- Skill Creator - RIGHT PANEL -->
     <div id="panel-skill-right" style="display:none;">
-      <div class="section"><h3>Skill Creator</h3><p>Platzhalter.</p></div>
+      <!-- Placeholder (shown when no skill selected) -->
+      <div id="sc-placeholder" style="text-align:center; padding:60px 20px; color:#666;">
+        <p>← Wähle einen Skill zum Editieren<br>oder erstelle einen neuen</p>
+      </div>
+
+      <!-- Dynamic Skill Editor (hidden initially) -->
+      <div id="sc-form" style="display:none;">
+        <h2 id="sc-form-title" style="margin:0 0 12px 0; color:#ffaa00;">Neuen Skill erstellen</h2>
+
+        <!-- Dynamic form fields will be generated here -->
+        <div id="sc-dynamic-fields" style="max-height:600px; overflow-y:auto;">
+          <!-- Auto-generated based on skill properties -->
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="section" style="margin-top:12px;">
+          <button id="sc-save" style="width:100%; padding:12px; background:#ffaa00; color:#0f0f16; font-weight:600; border:none; border-radius:6px; cursor:pointer; margin-bottom:8px;">
+            💾 Speichern
+          </button>
+          <button id="sc-cancel" style="width:100%; padding:10px; background:#2b2b36; color:#eaeaf0; border:none; border-radius:6px; cursor:pointer;">
+            ✕ Abbrechen
+          </button>
+        </div>
+      </div>
     </div>
     <div id="panel-ai-right" style="display:none;">
       <div class="section"><h3>KI Creator</h3><p>Platzhalter.</p></div>
