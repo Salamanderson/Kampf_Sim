@@ -160,6 +160,20 @@
     document.getElementById('tab-char')?.addEventListener('click', ()=>setActiveTab('tab-char'));
     document.getElementById('tab-skill')?.addEventListener('click', ()=>setActiveTab('tab-skill'));
     document.getElementById('tab-ai')?.addEventListener('click', ()=>setActiveTab('tab-ai'));
+
+    // Speed Control Buttons
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const speed = parseInt(btn.dataset.speed);
+        setGameSpeed(speed);
+        document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }
+
+  function setGameSpeed(speed){
+    window.dispatchEvent(new CustomEvent('VC_SET_GAME_SPEED', { detail: { speed } }));
   }
 
   function initHUDWindow(){
@@ -481,6 +495,63 @@
       document.getElementById('match-results').style.display = 'none';
       setActiveTab('tab-manager');
     });
+
+    window.addEventListener('VC_MATCH_END', (ev) => {
+      const data = ev.detail || {};
+      showMatchResults(data);
+    });
+  }
+
+  function showMatchResults(data){
+    const { winner, loser, duration, stats, xpGains } = data;
+    const resultDiv = document.getElementById('result-content');
+    const resultsPanel = document.getElementById('match-results');
+
+    if (!resultDiv || !resultsPanel) return;
+
+    // Format duration
+    const durationSec = (duration / 1000).toFixed(1);
+
+    // Build stats table
+    let html = `
+      <div style="text-align:center; margin-bottom:12px;">
+        <h2 style="color:#00ff88; margin:8px 0;">🏆 ${winner} gewinnt!</h2>
+        <div style="font-size:11px; opacity:0.7;">Match Dauer: ${durationSec}s</div>
+      </div>
+
+      <h4 style="margin:12px 0 8px 0; font-size:12px; color:#7ad7ff;">Match Statistiken:</h4>
+      <table style="width:100%; font-size:11px; border-collapse:collapse;">
+        <tr style="border-bottom:1px solid #2b2b36;">
+          <th style="text-align:left; padding:4px;">Fighter</th>
+          <th style="text-align:center; padding:4px;">DMG</th>
+          <th style="text-align:center; padding:4px;">Kills</th>
+          <th style="text-align:center; padding:4px;">XP</th>
+        </tr>
+    `;
+
+    Object.keys(stats).forEach(fighterId => {
+      const s = stats[fighterId];
+      const xp = xpGains[fighterId];
+      const levelUp = xp && xp.leveledUp ? ` ⬆️ Lvl ${xp.newLevel}` : '';
+      html += `
+        <tr style="border-bottom:1px solid #2b2b36;">
+          <td style="padding:4px;">${s.name}</td>
+          <td style="text-align:center; padding:4px;">${Math.round(s.damageDealt)}</td>
+          <td style="text-align:center; padding:4px;">${s.kills}</td>
+          <td style="text-align:center; padding:4px; ${levelUp ? 'color:#00ff88; font-weight:600;' : ''}">
+            +${xp ? xp.xp : 0}${levelUp}
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `</table>`;
+
+    resultDiv.innerHTML = html;
+    resultsPanel.style.display = 'block';
+
+    // Switch to Manager tab to show results
+    setTimeout(() => setActiveTab('tab-manager'), 500);
   }
 
   function startManagerMatch(){

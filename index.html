@@ -95,6 +95,14 @@
     .team-slot .fighter-info .name { font-size:12px; font-weight:600; }
     .team-slot .fighter-info .level { font-size:10px; opacity:0.7; }
     .team-slot.filled { border-style:solid; border-color:#00aaff; }
+
+    /* Speed Control Buttons */
+    .speed-btn {
+      flex:1; padding:8px; background:#14141c; color:#eaeaf0; border:1px solid #2b2b36;
+      border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; transition: all 0.2s;
+    }
+    .speed-btn:hover { border-color:#00aaff; background:#1a1a24; }
+    .speed-btn.active { background:#00aaff; color:#fff; border-color:#00aaff; }
   </style>
 
   <!-- Namespaces -->
@@ -152,6 +160,15 @@
           <option value="defensive">defensiv</option>
           <option value="random">random</option>
         </select>
+      </div>
+
+      <div class="section" style="margin-top:16px;">
+        <h3>Match Speed</h3>
+        <div style="display:flex; gap:8px;">
+          <button class="speed-btn" data-speed="1">1x</button>
+          <button class="speed-btn active" data-speed="2">2x</button>
+          <button class="speed-btn" data-speed="4">4x</button>
+        </div>
       </div>
     </div>
 
