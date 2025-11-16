@@ -567,13 +567,11 @@
   }
 
   function saveCharactersToLocal(){
-    try{ localStorage.setItem('vibecode_characters', JSON.stringify(window.GameData)); }catch(e){}
+    // Save all data when characters change
+    saveAllDataToLocal();
   }
   function loadCharactersFromLocal(){
-    try{
-      const s = localStorage.getItem('vibecode_characters');
-      if (s){ const d = JSON.parse(s); if (d && Array.isArray(d.characters)) window.GameData = d; }
-    }catch(e){}
+    // No longer used - all data loaded via loadAllDataToLocal()
   }
 
   // ----- Manager Mode -----
@@ -1170,106 +1168,92 @@
   }
 
   function saveSkillsToLocal(){
-    try{
-      localStorage.setItem('vibecode_skills', JSON.stringify({skills: window.GameData.skills}));
-    }catch(e){}
+    // Save all data when skills change
+    saveAllDataToLocal();
   }
 
   function loadSkillsFromLocal(){
-    try{
-      const s = localStorage.getItem('vibecode_skills');
-      if (s){
-        const data = JSON.parse(s);
-        if (data?.skills) window.GameData.skills = data.skills;
-      }
-    }catch(e){}
+    // No longer used - all data loaded via loadAllDataToLocal()
   }
 
-  function mergeLocalData(){
-    // Merge Characters: Base (JSON) + Custom (localStorage)
+  function saveAllDataToLocal(){
     try{
-      const localChars = localStorage.getItem('vibecode_characters');
-      if (localChars){
-        const localData = JSON.parse(localChars);
-        if (localData?.characters){
-          const baseChars = window.GameData.characters || [];
-          const customChars = localData.characters;
+      const dataToSave = {
+        characters: window.GameData.characters || [],
+        skills: window.GameData.skills || [],
+        skillCategories: window.GameData.skillCategories || {},
+        items: window.GameData.items || []
+      };
+      localStorage.setItem('vibecode_all_data', JSON.stringify(dataToSave));
+    }catch(e){
+      console.warn('Could not save data to localStorage');
+    }
+  }
 
-          // Create map of base character IDs
-          const baseIds = new Set(baseChars.map(c => c.id));
-
-          // Add only NEW custom characters (not in base)
-          customChars.forEach(customChar => {
-            if (!baseIds.has(customChar.id)){
-              baseChars.push(customChar);
-            }
-          });
-
-          window.GameData.characters = baseChars;
-          console.log('[Main] Merged', baseChars.length, 'total characters (', customChars.filter(c => !baseIds.has(c.id)).length, 'custom)');
-        }
-      }
-    }catch(e){ console.warn('Could not merge custom characters'); }
-
-    // Merge Skills: Base (JSON) + Custom (localStorage)
+  function loadAllDataFromLocal(){
     try{
-      const localSkills = localStorage.getItem('vibecode_skills');
-      if (localSkills){
-        const localData = JSON.parse(localSkills);
-        if (localData?.skills){
-          const baseSkills = window.GameData.skills || [];
-          const customSkills = localData.skills;
-
-          // Create map of base skill IDs
-          const baseIds = new Set(baseSkills.map(s => s.id));
-
-          // Add only NEW custom skills (not in base)
-          customSkills.forEach(customSkill => {
-            if (!baseIds.has(customSkill.id)){
-              baseSkills.push(customSkill);
-            }
-          });
-
-          window.GameData.skills = baseSkills;
-          console.log('[Main] Merged', baseSkills.length, 'total skills (', customSkills.filter(s => !baseIds.has(s.id)).length, 'custom)');
-        }
+      const saved = localStorage.getItem('vibecode_all_data');
+      if (saved){
+        const data = JSON.parse(saved);
+        window.GameData = window.GameData || {};
+        window.GameData.characters = data.characters || [];
+        window.GameData.skills = data.skills || [];
+        window.GameData.skillCategories = data.skillCategories || {};
+        window.GameData.items = data.items || [];
       }
-    }catch(e){ console.warn('Could not merge custom skills'); }
+    }catch(e){
+      console.warn('Could not load data from localStorage');
+    }
   }
 
   // ----- Boot -----
   window.addEventListener('load', async ()=>{
-    // Load base data from JSON files
-    try{
-      const resp = await fetch('data/characters.json');
-      if (resp.ok){
-        window.GameData = await resp.json();
-      }
-    }catch(e){ console.warn('characters.json konnte nicht geladen werden, benutze Defaults'); }
+    // Check if we have data in localStorage
+    const hasLocalData = localStorage.getItem('vibecode_data_initialized');
 
-    // Items laden
-    try{
-      const resp = await fetch('data/items.json');
-      if (resp.ok){
-        const itemsData = await resp.json();
-        window.GameData.items = itemsData.items || [];
-        console.log('[Main] Loaded', window.GameData.items.length, 'base items');
-      }
-    }catch(e){ console.warn('items.json konnte nicht geladen werden'); }
+    if (!hasLocalData){
+      // FIRST RUN: Load from JSON and save to localStorage
+      console.log('[Main] First run - loading defaults from JSON files');
 
-    // Load skills.json
-    try{
-      const skillResp = await fetch('data/skills.json');
-      if (skillResp.ok){
-        const skillsData = await skillResp.json();
-        window.GameData.skills = skillsData.skills || [];
-        window.GameData.skillCategories = skillsData.categories || {};
-        console.log('[Main] Loaded', window.GameData.skills.length, 'base skills');
-      }
-    }catch(e){ console.warn('skills.json konnte nicht geladen werden'); }
+      // Load base data from JSON files
+      try{
+        const resp = await fetch('data/characters.json');
+        if (resp.ok){
+          window.GameData = await resp.json();
+        }
+      }catch(e){ console.warn('characters.json konnte nicht geladen werden'); }
 
-    // Merge with localStorage (keeps your custom characters/skills)
-    mergeLocalData();
+      // Items laden
+      try{
+        const resp = await fetch('data/items.json');
+        if (resp.ok){
+          const itemsData = await resp.json();
+          window.GameData.items = itemsData.items || [];
+        }
+      }catch(e){ console.warn('items.json konnte nicht geladen werden'); }
+
+      // Load skills.json
+      try{
+        const skillResp = await fetch('data/skills.json');
+        if (skillResp.ok){
+          const skillsData = await skillResp.json();
+          window.GameData.skills = skillsData.skills || [];
+          window.GameData.skillCategories = skillsData.categories || {};
+        }
+      }catch(e){ console.warn('skills.json konnte nicht geladen werden'); }
+
+      // Save to localStorage for future use
+      saveAllDataToLocal();
+      localStorage.setItem('vibecode_data_initialized', 'true');
+      console.log('[Main] Initial data saved to localStorage');
+      console.log('[Main] Total:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items');
+
+    } else {
+      // SUBSEQUENT RUNS: Load everything from localStorage
+      console.log('[Main] Loading all data from localStorage');
+      loadAllDataFromLocal();
+      console.log('[Main] Loaded:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items');
+    }
 
     populateCharacterSelects();
     bindHeader();
