@@ -319,6 +319,33 @@
     if (this.cooldowns[skillName]>0 || this.state.startsWith('attack_')) return;
     if (this.en < (base.cost||0)) return;
 
+    // === RANGE VALIDATION FOR HEALS ===
+    // Self-heals are always allowed (no range check needed)
+    const isSelfHeal = !base.isAoE && !base.radius;
+
+    if (!isSelfHeal){
+      // For AoE heals, check if any ally is in range
+      const allies = this.scene.fighters?.filter(f => f.teamId === this.teamId && f !== this && !f.ko) || [];
+
+      if (base.isAoE || base.radius){
+        const effectiveRadius = base.radius || 0;
+        const alliesInRange = allies.filter(a => {
+          const dist = Math.hypot(a.x - this.x, a.y - this.y);
+          return dist <= effectiveRadius;
+        });
+
+        // Also check if self is target (area_heal can heal self + allies)
+        if (alliesInRange.length === 0 && base.isAoE){
+          // No allies in range and it's not a self-targeting heal
+          if (this.scene.game.loop.frame % 180 === 0){ // Log every 3 seconds
+            console.log(`[Range Check] ${this.id} blocked ${skillName}: No allies in AoE radius (${effectiveRadius})`);
+          }
+          return;
+        }
+      }
+    }
+
+    // === SKILL EXECUTION (valid target exists) ===
     const speed = this.stats.castSpeed;
     const m = Object.assign({}, base, {
       startup: Math.max(1, Math.round(base.startup / speed)),
@@ -338,13 +365,59 @@
     if (this.state==='hitstun'||this.state==='dash'||this.state==='ko') return;
     if (this.state.startsWith('attack_')) return;
     if (base.cd && this.cooldowns[kind]>0) return;
+
+    // === RANGE VALIDATION ===
+    // Find all enemies to check if skill can hit
+    const enemies = this.scene.fighters?.filter(f => f.teamId !== this.teamId && !f.ko) || [];
+    if (enemies.length === 0) return; // No targets
+
     const speed = base.type==='energy'?this.stats.castSpeed:this.stats.attackSpeed;
+    const rangeMultiplier = base.type==='energy'?this.stats.energyRange:this.stats.physRange;
+    const effectiveRange = (base.range || 0) * rangeMultiplier;
+    const effectiveRadius = base.radius || 0;
+
+    // For AoE skills (range=0), check if ANY enemy is within radius
+    if (base.range === 0 || base.isAoE){
+      const enemiesInRadius = enemies.filter(e => {
+        const dist = Math.hypot(e.x - this.x, e.y - this.y);
+        return dist <= effectiveRadius;
+      });
+      if (enemiesInRadius.length === 0){
+        // No enemies in AoE radius - don't use skill
+        if (this.scene.game.loop.frame % 180 === 0){ // Log every 3 seconds
+          console.log(`[Range Check] ${this.id} blocked ${kind}: No enemies in AoE radius (${effectiveRadius})`);
+        }
+        return;
+      }
+    } else {
+      // For directional skills, check if closest enemy is within effective range
+      let closestEnemy = null;
+      let minDist = Infinity;
+      enemies.forEach(e => {
+        const dist = Math.hypot(e.x - this.x, e.y - this.y);
+        if (dist < minDist){
+          minDist = dist;
+          closestEnemy = e;
+        }
+      });
+
+      const totalRange = effectiveRange + effectiveRadius;
+      if (minDist > totalRange){
+        // Target too far - don't use skill
+        if (this.scene.game.loop.frame % 180 === 0){ // Log every 3 seconds
+          console.log(`[Range Check] ${this.id} blocked ${kind}: Target at ${minDist.toFixed(0)} > max range ${totalRange.toFixed(0)}`);
+        }
+        return;
+      }
+    }
+
+    // === SKILL EXECUTION (target is in range) ===
     const m = Object.assign({}, base, {
       startup: Math.max(1, Math.round(base.startup / speed)),
       active:  Math.max(0, Math.round((base.active||0) / speed)),
       recovery:Math.max(1, Math.round(base.recovery / speed)),
       damage:(base.damage||0) * (base.type==='energy'?this.stats.energyAtk:this.stats.physAtk),
-      range: (base.range||0) * (base.type==='energy'?this.stats.energyRange:this.stats.physRange)
+      range: effectiveRange
     });
     this.currentMove = m;
     this.state = 'attack_'+kind; this.moveName = kind; this.moveFrame=0; this.stateTimer = m.startup + (m.active||0) + m.recovery;

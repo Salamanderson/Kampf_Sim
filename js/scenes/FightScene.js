@@ -304,7 +304,13 @@
 
         // DEBUG: Log AI actions every 60 frames (~1 second)
         if (this.game.loop.frame % 60 === 0 && i === 0) {
-          console.log(`[AI Debug] ${f.id}: action=${action}, state=${f.state}, moves=`, Object.keys(f.moves));
+          const closestDist = snapshot.closestEnemy ? snapshot.closestEnemy.dist.toFixed(0) : 'N/A';
+          const skillsInRange = Object.keys(snapshot.availableSkills || {}).filter(sk => {
+            const skill = snapshot.availableSkills[sk];
+            const range = (skill.range || 0) + (skill.radius || 0);
+            return skill.canUse && (snapshot.closestEnemy?.dist || 999) <= range;
+          });
+          console.log(`[AI Debug] ${f.id}: action=${action}, dist=${closestDist}, state=${f.state}, skills_in_range=[${skillsInRange.join(',')}]`);
         }
 
         f.applyAIAction(action);
