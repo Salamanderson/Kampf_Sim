@@ -1,0 +1,181 @@
+[
+  {
+    "id": "tank",
+    "name": "Tank",
+    "description": "Frontline fighter - holds position, protects allies, absorbs damage",
+    "behavior": {
+      "aggression": 6,
+      "healing_threshold": 0.4,
+      "energy_conservation": 0.3,
+      "preferred_range": {
+        "min": 80,
+        "max": 160
+      },
+      "retreat_hp_threshold": 0.25,
+      "use_heavy_attack_chance": 0.7,
+      "dash_to_engage": true,
+      "dash_to_retreat": false,
+      "strafe_when_low_hp": true,
+      "spin_in_crowd": true,
+      "min_enemies_for_spin": 1,
+      "positioning": "frontline"
+    }
+  },
+  {
+    "id": "support",
+    "name": "Support",
+    "description": "Heals allies, maintains distance, uses crowd control",
+    "behavior": {
+      "aggression": 3,
+      "healing_threshold": 0.65,
+      "ally_heal_threshold": 0.5,
+      "energy_conservation": 0.7,
+      "preferred_range": {
+        "min": 180,
+        "max": 300
+      },
+      "retreat_hp_threshold": 0.5,
+      "use_heavy_attack_chance": 0.2,
+      "dash_to_engage": false,
+      "dash_to_retreat": true,
+      "strafe_when_low_hp": true,
+      "spin_in_crowd": false,
+      "min_enemies_for_spin": 3,
+      "positioning": "backline"
+    }
+  },
+  {
+    "id": "assassin",
+    "name": "Assassin",
+    "description": "High mobility hit-and-run, targets low HP enemies",
+    "behavior": {
+      "aggression": 8,
+      "healing_threshold": 0.3,
+      "energy_conservation": 0.4,
+      "preferred_range": {
+        "min": 100,
+        "max": 180
+      },
+      "retreat_hp_threshold": 0.35,
+      "use_heavy_attack_chance": 0.4,
+      "dash_to_engage": true,
+      "dash_to_retreat": true,
+      "strafe_when_low_hp": true,
+      "spin_in_crowd": true,
+      "min_enemies_for_spin": 2,
+      "target_priority": "lowest_hp",
+      "positioning": "flanker"
+    }
+  },
+  {
+    "id": "mage",
+    "name": "Mage",
+    "description": "Energy-based ranged fighter, uses skills strategically",
+    "behavior": {
+      "aggression": 5,
+      "healing_threshold": 0.45,
+      "energy_conservation": 0.6,
+      "preferred_range": {
+        "min": 200,
+        "max": 350
+      },
+      "retreat_hp_threshold": 0.4,
+      "use_heavy_attack_chance": 0.5,
+      "dash_to_engage": false,
+      "dash_to_retreat": true,
+      "strafe_when_low_hp": false,
+      "spin_in_crowd": true,
+      "min_enemies_for_spin": 2,
+      "positioning": "backline"
+    }
+  },
+  {
+    "id": "berserker",
+    "name": "Berserker",
+    "description": "Ultra aggressive, more dangerous when low HP, all-in fighter",
+    "behavior": {
+      "aggression": 10,
+      "healing_threshold": 0.15,
+      "energy_conservation": 0.1,
+      "preferred_range": {
+        "min": 60,
+        "max": 140
+      },
+      "retreat_hp_threshold": 0.0,
+      "use_heavy_attack_chance": 0.8,
+      "dash_to_engage": true,
+      "dash_to_retreat": false,
+      "strafe_when_low_hp": false,
+      "spin_in_crowd": true,
+      "min_enemies_for_spin": 1,
+      "low_hp_aggression_boost": true,
+      "positioning": "frontline"
+    }
+  },
+  {
+    "id": "aggressive",
+    "name": "Aggressive (Legacy)",
+    "description": "Basic aggressive AI - maintained for compatibility",
+    "behavior": {
+      "aggression": 7,
+      "healing_threshold": 0.35,
+      "energy_conservation": 0.3,
+      "preferred_range": {
+        "min": 90,
+        "max": 220
+      },
+      "retreat_hp_threshold": 0.2,
+      "use_heavy_attack_chance": 0.4,
+      "dash_to_engage": true,
+      "dash_to_retreat": false,
+      "strafe_when_low_hp": false,
+      "spin_in_crowd": true,
+      "min_enemies_for_spin": 2,
+      "positioning": "frontline"
+    }
+  },
+  {
+    "id": "defensive",
+    "name": "Defensive (Legacy)",
+    "description": "Basic defensive AI - maintained for compatibility",
+    "behavior": {
+      "aggression": 4,
+      "healing_threshold": 0.5,
+      "energy_conservation": 0.5,
+      "preferred_range": {
+        "min": 120,
+        "max": 220
+      },
+      "retreat_hp_threshold": 0.4,
+      "use_heavy_attack_chance": 0.25,
+      "dash_to_engage": false,
+      "dash_to_retreat": true,
+      "strafe_when_low_hp": true,
+      "spin_in_crowd": false,
+      "min_enemies_for_spin": 3,
+      "positioning": "midline"
+    }
+  },
+  {
+    "id": "random",
+    "name": "Random (Legacy)",
+    "description": "Random behavior - maintained for compatibility",
+    "behavior": {
+      "aggression": 5,
+      "healing_threshold": 0.4,
+      "energy_conservation": 0.5,
+      "preferred_range": {
+        "min": 100,
+        "max": 250
+      },
+      "retreat_hp_threshold": 0.3,
+      "use_heavy_attack_chance": 0.5,
+      "dash_to_engage": true,
+      "dash_to_retreat": true,
+      "strafe_when_low_hp": true,
+      "spin_in_crowd": true,
+      "min_enemies_for_spin": 2,
+      "positioning": "midline"
+    }
+  }
+]

@@ -25,29 +25,105 @@
     return jsFallbackAI(profileId, stateObj);
   };
 
-  // Fallback-KI
+  // Fallback-KI with Profile Support
   function jsFallbackAI(profileId, s){
     const me = s.self, e = s.closestEnemy;
     if (!e) return 'idle';
     const dx = e.x - me.x, dy = e.y - me.y;
     const dist = Math.hypot(dx, dy);
 
-    if (me.hp < me.maxHp*0.35 && s.cooldowns.heal <= 0) return 'heal';
-
-    if (profileId === 'aggressive'){
-      if (dist > 220) return 'move_towards';
-      if (dist > 140 && Math.random()<0.35) return 'dash';
-      if (dist < 90 && Math.random()<0.35) return 'spin';
-      return Math.random()<0.6 ? 'attack_light' : 'attack_heavy';
+    // Find AI profile
+    const profile = (window.GameData.aiProfiles || []).find(p => p.id === profileId);
+    if (!profile){
+      // Fallback to random if profile not found
+      const acts = ['move_towards','move_away','strafe_left','strafe_right','dash','attack_light','attack_heavy','spin','heal','idle'];
+      return acts[(Math.random()*acts.length)|0];
     }
-    if (profileId === 'defensive'){
-      if (dist < 120 && Math.random()<0.4) return (Math.random()<0.5)?'strafe_left':'strafe_right';
-      if (dist < 140) return 'move_away';
-      if (dist > 220 && Math.random()<0.25) return 'dash';
+
+    const behavior = profile.behavior;
+    const hpPercent = me.hp / me.maxHp;
+    const enPercent = me.energy / me.maxEnergy;
+
+    // Berserker gets more aggressive when low HP
+    let aggressionMod = 1;
+    if (behavior.low_hp_aggression_boost && hpPercent < 0.3){
+      aggressionMod = 1.5;
+    }
+
+    // Healing decision
+    if (hpPercent < behavior.healing_threshold && s.cooldowns.heal <= 0){
+      return 'heal';
+    }
+
+    // Retreat if HP too low
+    if (hpPercent < behavior.retreat_hp_threshold && dist < behavior.preferred_range.max){
+      if (behavior.dash_to_retreat && s.cooldowns.dash <= 0 && enPercent > 0.2){
+        return 'dash';
+      }
+      return 'move_away';
+    }
+
+    // Strafe when low HP
+    if (behavior.strafe_when_low_hp && hpPercent < 0.4 && dist < behavior.preferred_range.max){
+      return Math.random() < 0.5 ? 'strafe_left' : 'strafe_right';
+    }
+
+    // Spin attack if enemies nearby
+    const nearbyEnemies = s.allEnemies ? s.allEnemies.filter(en => {
+      const d = Math.hypot(en.x - me.x, en.y - me.y);
+      return d < 120;
+    }).length : 0;
+
+    if (behavior.spin_in_crowd && nearbyEnemies >= behavior.min_enemies_for_spin && s.cooldowns.spin <= 0){
+      return 'spin';
+    }
+
+    // Distance-based behavior
+    const prefMin = behavior.preferred_range.min;
+    const prefMax = behavior.preferred_range.max;
+
+    // Too far - move closer
+    if (dist > prefMax){
+      if (behavior.dash_to_engage && s.cooldowns.dash <= 0 && enPercent > 0.3){
+        return Math.random() < (behavior.aggression / 10) * aggressionMod ? 'dash' : 'move_towards';
+      }
+      return 'move_towards';
+    }
+
+    // Too close - back up or attack
+    if (dist < prefMin){
+      if (behavior.positioning === 'backline' || behavior.positioning === 'midline'){
+        return 'move_away';
+      }
+      // Frontline fighters attack when close
+      if (Math.random() < behavior.use_heavy_attack_chance){
+        return 'attack_heavy';
+      }
       return 'attack_light';
     }
-    const acts = ['move_towards','move_away','strafe_left','strafe_right','dash','attack_light','attack_heavy','spin','heal','idle'];
-    return acts[(Math.random()*acts.length)|0];
+
+    // In preferred range - attack!
+    const aggressionChance = (behavior.aggression / 10) * aggressionMod;
+
+    // Energy conservation
+    if (enPercent < behavior.energy_conservation){
+      return 'attack_light'; // Light attacks cost less energy
+    }
+
+    // Choose attack type
+    if (Math.random() < aggressionChance){
+      if (Math.random() < behavior.use_heavy_attack_chance){
+        return 'attack_heavy';
+      }
+      return 'attack_light';
+    }
+
+    // Occasionally strafe for positioning
+    if (Math.random() < 0.2){
+      return Math.random() < 0.5 ? 'strafe_left' : 'strafe_right';
+    }
+
+    return 'attack_light';
   }
 
   // ----- Phaser Config -----
@@ -111,6 +187,8 @@
         populateCharCreatorList();
         // Always refresh skill selector (in case new skills were created)
         populateSkillLoadoutSelector();
+        // Always refresh AI profile selector
+        populateAIProfileSelector();
         mode = 'char_creator';
       } else if (id === 'tab-manager'){
         document.getElementById('panel-manager-left').style.display='block';
@@ -344,11 +422,20 @@
       populateSkillLoadoutSelector();
     }
 
+    // Populate AI profile selector
+    populateAIProfileSelector();
+
     // Load data into form
     document.getElementById('cc-name').value = char.name || '';
     document.getElementById('cc-role').value = char.role || 'Aggressive';
     document.getElementById('cc-color').value = '#' + (char.color || 0x64c8ff).toString(16).padStart(6, '0');
     document.getElementById('cc-level').value = char.level || 1;
+
+    // Set AI profile
+    const aiProfileSelect = document.getElementById('cc-ai-profile');
+    if (aiProfileSelect){
+      aiProfileSelect.value = char.aiProfile || 'aggressive';
+    }
 
     // Personality
     const pers = char.personality || {};
@@ -399,6 +486,13 @@
     document.getElementById('cc-role').value = 'Aggressive';
     document.getElementById('cc-color').value = '#64c8ff';
     document.getElementById('cc-level').value = 1;
+
+    // Populate and set default AI profile
+    populateAIProfileSelector();
+    const aiProfileSelect = document.getElementById('cc-ai-profile');
+    if (aiProfileSelect){
+      aiProfileSelect.value = 'aggressive';
+    }
 
     setSliderValue('cc-pers-agg', 5);
     setSliderValue('cc-pers-team', 5);
@@ -465,6 +559,26 @@
     });
   }
 
+  function populateAIProfileSelector(){
+    const select = document.getElementById('cc-ai-profile');
+    if (!select) return;
+
+    const profiles = window.GameData.aiProfiles || [];
+    select.innerHTML = '';
+
+    profiles.forEach(profile => {
+      const option = document.createElement('option');
+      option.value = profile.id;
+      option.textContent = `${profile.name} - ${profile.description}`;
+      select.appendChild(option);
+    });
+
+    // Default to 'aggressive' if available
+    if (profiles.find(p => p.id === 'aggressive')){
+      select.value = 'aggressive';
+    }
+  }
+
   function saveCharacter(){
     const name = document.getElementById('cc-name').value.trim();
     if (!name){
@@ -488,6 +602,7 @@
       id: ccEditMode ? ccCurrentCharId : generateCharId(name),
       name: name,
       role: document.getElementById('cc-role').value,
+      aiProfile: document.getElementById('cc-ai-profile').value || 'aggressive',
       shape: 'circle',
       color: color,
       radius: 22,
@@ -1176,7 +1291,8 @@
         characters: window.GameData.characters || [],
         skills: window.GameData.skills || [],
         skillCategories: window.GameData.skillCategories || {},
-        items: window.GameData.items || []
+        items: window.GameData.items || [],
+        aiProfiles: window.GameData.aiProfiles || []
       };
       localStorage.setItem('vibecode_all_data', JSON.stringify(dataToSave));
     }catch(e){
@@ -1194,9 +1310,36 @@
         window.GameData.skills = data.skills || [];
         window.GameData.skillCategories = data.skillCategories || {};
         window.GameData.items = data.items || [];
+        window.GameData.aiProfiles = data.aiProfiles || [];
       }
     }catch(e){
       console.warn('Could not load data from localStorage');
+    }
+  }
+
+  // Migrate existing characters to have AI profiles
+  function migrateCharactersToAIProfiles(){
+    const chars = window.GameData.characters || [];
+    let migrated = 0;
+
+    chars.forEach(char => {
+      if (!char.aiProfile){
+        // Assign AI profile based on role
+        const roleToProfile = {
+          'Aggressive': 'berserker',
+          'Support': 'support',
+          'Tank': 'tank',
+          'Assassin': 'assassin',
+          'Mage': 'mage'
+        };
+        char.aiProfile = roleToProfile[char.role] || 'aggressive';
+        migrated++;
+      }
+    });
+
+    if (migrated > 0){
+      console.log(`[Migration] Updated ${migrated} characters with default AI profiles`);
+      saveAllDataToLocal();
     }
   }
 
@@ -1236,18 +1379,30 @@
         }
       }catch(e){ console.warn('skills.json konnte nicht geladen werden'); }
 
+      // Load AI profiles
+      try{
+        const aiResp = await fetch('data/ai_profiles.json');
+        if (aiResp.ok){
+          const aiProfiles = await aiResp.json();
+          window.GameData.aiProfiles = aiProfiles || [];
+        }
+      }catch(e){ console.warn('ai_profiles.json konnte nicht geladen werden'); }
+
       // Save to localStorage for future use
       saveAllDataToLocal();
       localStorage.setItem('vibecode_data_initialized', 'true');
       console.log('[Main] Initial data saved to localStorage');
-      console.log('[Main] Total:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items');
+      console.log('[Main] Total:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items,', window.GameData.aiProfiles?.length, 'AI profiles');
 
     } else {
       // SUBSEQUENT RUNS: Load everything from localStorage
       console.log('[Main] Loading all data from localStorage');
       loadAllDataFromLocal();
-      console.log('[Main] Loaded:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items');
+      console.log('[Main] Loaded:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items,', window.GameData.aiProfiles?.length, 'AI profiles');
     }
+
+    // Migrate existing characters to have AI profiles
+    migrateCharactersToAIProfiles();
 
     populateCharacterSelects();
     bindHeader();
