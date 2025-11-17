@@ -168,10 +168,52 @@
       if (d<aminDist){ aminDist=d; closestAlly=a; }
     }
 
+    // Build available skills data with range info
+    const availableSkills = {};
+    Object.keys(this.moves).forEach(skillName => {
+      const skill = this.moves[skillName];
+      const onCooldown = this.cooldowns[skillName] > 0;
+      const hasEnergy = this.en >= (skill.cost || 0);
+      availableSkills[skillName] = {
+        range: skill.range || 0,
+        radius: skill.radius || 0,
+        type: skill.type,
+        damage: skill.damage || 0,
+        heal: skill.heal || 0,
+        isAoE: skill.isAoE || false,
+        onCooldown: onCooldown,
+        hasEnergy: hasEnergy,
+        canUse: !onCooldown && hasEnergy
+      };
+    });
+
+    // Include all enemies for multi-target checks
+    const allEnemies = enemies.map(e => ({
+      id: e.id,
+      x: e.x,
+      y: e.y,
+      hp: e.hp,
+      maxHp: e.maxHp,
+      dist: Math.hypot(e.x - this.x, e.y - this.y)
+    }));
+
+    // Include all allies for heal/buff checks
+    const allAllies = allies.map(a => ({
+      id: a.id,
+      x: a.x,
+      y: a.y,
+      hp: a.hp,
+      maxHp: a.maxHp,
+      dist: Math.hypot(a.x - this.x, a.y - this.y)
+    }));
+
     return {
       self: { id:this.id, teamId:this.teamId, x:this.x, y:this.y, vx:this.vx, vy:this.vy, hp:this.hp, maxHp:this.maxHp, en:this.en, maxEn:this.maxEn, state:this.state },
-      closestEnemy: closest ? { id:closest.id, x:closest.x, y:closest.y, hp:closest.hp } : null,
+      closestEnemy: closest ? { id:closest.id, x:closest.x, y:closest.y, hp:closest.hp, dist:dmin } : null,
       closestAlly: closestAlly ? { id:closestAlly.id, x:closestAlly.x, y:closestAlly.y, hp:closestAlly.hp, dist:aminDist } : null,
+      allEnemies: allEnemies,
+      allAllies: allAllies,
+      availableSkills: availableSkills,
       personality: this.personality,
       cooldowns: Object.assign({}, this.cooldowns),
       env: { arena: env.arena },
@@ -181,7 +223,23 @@
 
   Fighter.prototype.applyAIAction = function(action){
     if (this.ko) return;
-    // Map generic actions to character-specific skills
+
+    // Handle new use_skill:skillname format
+    if (action && action.startsWith('use_skill:')){
+      const skillName = action.substring(10); // Remove 'use_skill:' prefix
+      if (this.moves[skillName]){
+        const move = this.moves[skillName];
+        // Check if it's a heal/buff or attack skill
+        if (move.type === 'energy' && (move.heal > 0 || move.buff)){
+          this.tryHeal(skillName);
+        } else {
+          this.tryAttack(skillName);
+        }
+      }
+      return;
+    }
+
+    // Map generic actions to character-specific skills (legacy support)
     switch(action){
       case 'move_towards': this._accelerateTo(1.0); this.state='move'; break;
       case 'move_away':    this._accelerateTo(-1.0); this.state='move'; break;

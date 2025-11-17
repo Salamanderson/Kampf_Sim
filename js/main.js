@@ -25,19 +25,105 @@
     return jsFallbackAI(profileId, stateObj);
   };
 
-  // Fallback-KI with Profile Support
+  // ===== SKILL RANGE HELPER FUNCTIONS =====
+
+  // Find skills that can hit a target at given distance
+  function findSkillsInRange(availableSkills, targetDist){
+    const inRange = [];
+    Object.keys(availableSkills).forEach(skillName => {
+      const skill = availableSkills[skillName];
+      if (!skill.canUse) return; // Skip if on cooldown or no energy
+
+      // Calculate effective range (range + radius for attacks)
+      const effectiveRange = skill.range + skill.radius;
+
+      // For AoE skills (range=0), check if target is within radius
+      if (skill.isAoE || skill.range === 0){
+        if (targetDist <= skill.radius){
+          inRange.push({ name: skillName, ...skill, effectiveRange: skill.radius });
+        }
+      } else {
+        // For directional skills, check if target is within effective range
+        if (targetDist <= effectiveRange){
+          inRange.push({ name: skillName, ...skill, effectiveRange });
+        }
+      }
+    });
+    return inRange;
+  }
+
+  // Find best damage skill for current situation
+  function selectBestDamageSkill(skillsInRange, hpPercent, enPercent, behavior){
+    if (skillsInRange.length === 0) return null;
+
+    // Filter out heal/buff skills
+    const damageSkills = skillsInRange.filter(s => s.damage > 0);
+    if (damageSkills.length === 0) return null;
+
+    // Sort by damage (descending)
+    damageSkills.sort((a, b) => b.damage - a.damage);
+
+    // Choose based on energy and aggression
+    if (enPercent < behavior.energy_conservation){
+      // Low energy: use weakest skill to conserve
+      return damageSkills[damageSkills.length - 1].name;
+    } else {
+      // Good energy: use strong skills based on aggression
+      const aggressionChance = behavior.aggression / 10;
+      if (Math.random() < aggressionChance && damageSkills.length > 1){
+        return damageSkills[0].name; // Strongest skill
+      } else {
+        return damageSkills[Math.min(1, damageSkills.length - 1)].name; // Medium skill
+      }
+    }
+  }
+
+  // Find best heal skill
+  function selectBestHealSkill(availableSkills, closestAlly, allAllies){
+    const healSkills = Object.keys(availableSkills)
+      .filter(name => {
+        const skill = availableSkills[name];
+        return skill.canUse && skill.heal > 0;
+      })
+      .map(name => ({ name, ...availableSkills[name] }));
+
+    if (healSkills.length === 0) return null;
+
+    // Prefer AoE heal if multiple allies nearby need healing
+    const aoeHeal = healSkills.find(s => s.isAoE);
+    if (aoeHeal && allAllies){
+      const lowHpAlliesNearby = allAllies.filter(a => {
+        const hpPercent = a.hp / a.maxHp;
+        return hpPercent < 0.65 && a.dist <= aoeHeal.radius;
+      }).length;
+      if (lowHpAlliesNearby >= 2) return aoeHeal.name;
+    }
+
+    // Otherwise return first available heal
+    return healSkills[0].name;
+  }
+
+  // Fallback-KI with Profile Support and Range Checking
   function jsFallbackAI(profileId, s){
-    const me = s.self, e = s.closestEnemy;
+    const me = s.self;
+    const e = s.closestEnemy;
+    const skills = s.availableSkills || {};
+    const allEnemies = s.allEnemies || [];
+    const allAllies = s.allAllies || [];
+
     if (!e) return 'idle';
-    const dx = e.x - me.x, dy = e.y - me.y;
-    const dist = Math.hypot(dx, dy);
+    const dist = e.dist || Math.hypot(e.x - me.x, e.y - me.y);
 
     // Find AI profile
     const profile = (window.GameData.aiProfiles || []).find(p => p.id === profileId);
     if (!profile){
-      // Fallback to random if profile not found
-      const acts = ['move_towards','move_away','strafe_left','strafe_right','dash','attack_light','attack_heavy','spin','heal','idle'];
-      return acts[(Math.random()*acts.length)|0];
+      // Fallback: try to use any skill in range, otherwise move
+      const skillsInRange = findSkillsInRange(skills, dist);
+      if (skillsInRange.length > 0){
+        const damageSkill = selectBestDamageSkill(skillsInRange, 1, 1, { aggression: 5, energy_conservation: 0.2 });
+        if (damageSkill) return 'use_skill:' + damageSkill;
+      }
+      return dist > 100 ? 'move_towards' : 'idle';
     }
 
     const behavior = profile.behavior;
@@ -50,12 +136,13 @@
       aggressionMod = 1.5;
     }
 
-    // Healing decision
-    if (hpPercent < behavior.healing_threshold && s.cooldowns.heal <= 0){
-      return 'heal';
+    // === HEALING DECISION (with range check) ===
+    if (hpPercent < behavior.healing_threshold){
+      const healSkill = selectBestHealSkill(skills, s.closestAlly, allAllies);
+      if (healSkill) return 'use_skill:' + healSkill;
     }
 
-    // Retreat if HP too low
+    // === RETREAT IF HP TOO LOW ===
     if (hpPercent < behavior.retreat_hp_threshold && dist < behavior.preferred_range.max){
       if (behavior.dash_to_retreat && s.cooldowns.dash <= 0 && enPercent > 0.2){
         return 'dash';
@@ -63,27 +150,51 @@
       return 'move_away';
     }
 
-    // Strafe when low HP
+    // === STRAFE WHEN LOW HP ===
     if (behavior.strafe_when_low_hp && hpPercent < 0.4 && dist < behavior.preferred_range.max){
       return Math.random() < 0.5 ? 'strafe_left' : 'strafe_right';
     }
 
-    // Spin attack if enemies nearby
-    const nearbyEnemies = s.allEnemies ? s.allEnemies.filter(en => {
-      const d = Math.hypot(en.x - me.x, en.y - me.y);
-      return d < 120;
-    }).length : 0;
+    // === SPIN/AOE ATTACK IF ENEMIES NEARBY ===
+    if (behavior.spin_in_crowd){
+      const nearbyEnemies = allEnemies.filter(en => en.dist < 120).length;
+      if (nearbyEnemies >= (behavior.min_enemies_for_spin || 2)){
+        // Find AoE skills
+        const aoeSkills = Object.keys(skills)
+          .filter(name => {
+            const skill = skills[name];
+            return skill.canUse && skill.damage > 0 && (skill.isAoE || skill.range === 0);
+          })
+          .map(name => ({ name, ...skills[name] }))
+          .sort((a, b) => b.damage - a.damage);
 
-    if (behavior.spin_in_crowd && nearbyEnemies >= behavior.min_enemies_for_spin && s.cooldowns.spin <= 0){
-      return 'spin';
+        if (aoeSkills.length > 0){
+          // Check if any enemy is in AoE range
+          const bestAoE = aoeSkills[0];
+          const enemiesInAoE = allEnemies.filter(en => en.dist <= bestAoE.radius).length;
+          if (enemiesInAoE >= (behavior.min_enemies_for_spin || 2)){
+            return 'use_skill:' + bestAoE.name;
+          }
+        }
+      }
     }
 
-    // Distance-based behavior
+    // === DISTANCE-BASED BEHAVIOR ===
     const prefMin = behavior.preferred_range.min;
     const prefMax = behavior.preferred_range.max;
 
-    // Too far - move closer
+    // Find skills that are currently in range
+    const skillsInRange = findSkillsInRange(skills, dist);
+
+    // Too far - move closer or use long-range skills
     if (dist > prefMax){
+      // Check if we have long-range skills available
+      if (skillsInRange.length > 0){
+        const damageSkill = selectBestDamageSkill(skillsInRange, hpPercent, enPercent, behavior);
+        if (damageSkill) return 'use_skill:' + damageSkill;
+      }
+
+      // No skills in range, move closer
       if (behavior.dash_to_engage && s.cooldowns.dash <= 0 && enPercent > 0.3){
         return Math.random() < (behavior.aggression / 10) * aggressionMod ? 'dash' : 'move_towards';
       }
@@ -92,30 +203,29 @@
 
     // Too close - back up or attack
     if (dist < prefMin){
+      // Backline fighters retreat
       if (behavior.positioning === 'backline' || behavior.positioning === 'midline'){
         return 'move_away';
       }
-      // Frontline fighters attack when close
-      if (Math.random() < behavior.use_heavy_attack_chance){
-        return 'attack_heavy';
+
+      // Frontline fighters attack if they have skills in range
+      if (skillsInRange.length > 0){
+        const damageSkill = selectBestDamageSkill(skillsInRange, hpPercent, enPercent, behavior);
+        if (damageSkill) return 'use_skill:' + damageSkill;
       }
-      return 'attack_light';
+      return 'move_away'; // No skills available, back up
     }
 
-    // In preferred range - attack!
+    // === IN PREFERRED RANGE - ATTACK! ===
+    if (skillsInRange.length > 0){
+      const damageSkill = selectBestDamageSkill(skillsInRange, hpPercent, enPercent, behavior);
+      if (damageSkill) return 'use_skill:' + damageSkill;
+    }
+
+    // No skills in range - move to get into range
     const aggressionChance = (behavior.aggression / 10) * aggressionMod;
-
-    // Energy conservation
-    if (enPercent < behavior.energy_conservation){
-      return 'attack_light'; // Light attacks cost less energy
-    }
-
-    // Choose attack type
     if (Math.random() < aggressionChance){
-      if (Math.random() < behavior.use_heavy_attack_chance){
-        return 'attack_heavy';
-      }
-      return 'attack_light';
+      return 'move_towards';
     }
 
     // Occasionally strafe for positioning
@@ -123,7 +233,7 @@
       return Math.random() < 0.5 ? 'strafe_left' : 'strafe_right';
     }
 
-    return 'attack_light';
+    return 'move_towards';
   }
 
   // ----- Phaser Config -----
