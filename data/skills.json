@@ -5,7 +5,7 @@
       "name": "Slash",
       "type": "physical",
       "category": "aggressive",
-      "description": "Quick melee attack",
+      "description": "Standard sword swing",
       "stats": {
         "startup": 5,
         "active": 3,
@@ -58,7 +58,7 @@
         "hitstun": 8,
         "hitstop": 6,
         "range": 0,
-        "radius": 65,
+        "radius": 75,
         "cd": 80,
         "hits": 3,
         "color": 16766720
@@ -79,9 +79,35 @@
         "hitstop": 8,
         "range": 80,
         "radius": 24,
+        "shape": "rect",
+        "width": 140,
+        "height": 30,
         "lunge": 140,
         "cd": 60,
         "color": 16746564
+      }
+    },
+    {
+      "id": "execution",
+      "name": "Execution",
+      "type": "physical",
+      "category": "aggressive",
+      "description": "High-risk finisher - massive damage, long windup",
+      "stats": {
+        "startup": 30,
+        "active": 5,
+        "recovery": 20,
+        "damage": 40,
+        "hitstun": 25,
+        "hitstop": 15,
+        "range": 50,
+        "radius": 30,
+        "shape": "rect",
+        "width": 60,
+        "height": 40,
+        "lunge": 60,
+        "cd": 120,
+        "color": 10027263
       }
     },
     {
@@ -89,7 +115,7 @@
       "name": "Poke",
       "type": "physical",
       "category": "ranged",
-      "description": "Fast mid-range poke",
+      "description": "Fast mid-range spear thrust",
       "stats": {
         "startup": 6,
         "active": 2,
@@ -100,8 +126,8 @@
         "range": 70,
         "radius": 18,
         "shape": "rect",
-        "width": 120,
-        "height": 30,
+        "width": 130,
+        "height": 25,
         "color": 8966399
       }
     },
@@ -110,18 +136,45 @@
       "name": "Snipe",
       "type": "physical",
       "category": "ranged",
-      "description": "Long-range precision attack",
+      "description": "Ultra long-range precision shot",
       "stats": {
-        "startup": 8,
+        "startup": 10,
         "active": 2,
-        "recovery": 10,
-        "damage": 10,
-        "hitstun": 12,
-        "hitstop": 6,
-        "range": 140,
+        "recovery": 12,
+        "damage": 12,
+        "hitstun": 14,
+        "hitstop": 8,
+        "range": 180,
         "radius": 16,
-        "cd": 50,
+        "shape": "rect",
+        "width": 300,
+        "height": 8,
+        "cd": 70,
         "color": 7855359
+      }
+    },
+    {
+      "id": "death_ray",
+      "name": "Death Ray",
+      "type": "energy",
+      "category": "ranged",
+      "description": "Channeled laser beam - rotates with caster",
+      "stats": {
+        "startup": 15,
+        "active": 12,
+        "recovery": 15,
+        "damage": 3,
+        "hitstun": 4,
+        "hitstop": 2,
+        "range": 220,
+        "radius": 10,
+        "shape": "rect",
+        "width": 400,
+        "height": 10,
+        "hits": 5,
+        "cost": 40,
+        "cd": 100,
+        "color": 16724838
       }
     },
     {
@@ -129,7 +182,7 @@
       "name": "Shield Bash",
       "type": "physical",
       "category": "tank",
-      "description": "Knockback attack with short lunge",
+      "description": "Wide knockback attack",
       "stats": {
         "startup": 10,
         "active": 3,
@@ -137,8 +190,11 @@
         "damage": 10,
         "hitstun": 16,
         "hitstop": 8,
-        "range": 50,
+        "range": 40,
         "radius": 26,
+        "shape": "rect",
+        "width": 50,
+        "height": 90,
         "lunge": 40,
         "cd": 60,
         "knockback": 2.5,
@@ -146,11 +202,34 @@
       }
     },
     {
+      "id": "wide_sweep",
+      "name": "Wide Sweep",
+      "type": "physical",
+      "category": "tank",
+      "description": "Horizontal zone control sweep",
+      "stats": {
+        "startup": 12,
+        "active": 4,
+        "recovery": 14,
+        "damage": 11,
+        "hitstun": 12,
+        "hitstop": 7,
+        "range": 35,
+        "radius": 40,
+        "shape": "rect",
+        "width": 30,
+        "height": 140,
+        "knockback": 2.5,
+        "cd": 55,
+        "color": 11468799
+      }
+    },
+    {
       "id": "retreat",
       "name": "Retreat",
       "type": "physical",
       "category": "mobility",
-      "description": "Backwards dash with small damage",
+      "description": "Backwards dash with defensive hit",
       "stats": {
         "startup": 6,
         "active": 2,
@@ -160,6 +239,9 @@
         "hitstop": 3,
         "range": 50,
         "radius": 20,
+        "shape": "rect",
+        "width": 60,
+        "height": 60,
         "lunge": -80,
         "cd": 70,
         "color": 11184895
@@ -179,7 +261,7 @@
         "hitstun": 14,
         "hitstop": 9,
         "range": 0,
-        "radius": 70,
+        "radius": 80,
         "cd": 70,
         "color": 16750916
       }
@@ -189,16 +271,19 @@
       "name": "Punch",
       "type": "physical",
       "category": "basic",
-      "description": "Basic melee attack",
+      "description": "Quick jab attack",
       "stats": {
-        "startup": 6,
-        "active": 3,
-        "recovery": 8,
-        "damage": 9,
-        "hitstun": 10,
-        "hitstop": 6,
-        "range": 40,
+        "startup": 4,
+        "active": 2,
+        "recovery": 6,
+        "damage": 7,
+        "hitstun": 8,
+        "hitstop": 4,
+        "range": 35,
         "radius": 20,
+        "shape": "rect",
+        "width": 40,
+        "height": 40,
         "color": 16764006
       }
     },

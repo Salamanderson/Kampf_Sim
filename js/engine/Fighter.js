@@ -3,32 +3,35 @@
   const TWO_PI = Math.PI * 2;
 
   const defaultMoves = {
-    // AGGRESSIVE SKILLS (Close-range fighters) - OBB Hitboxes
-    slash: { name:'slash', type:'physical', startup:5, active:3, recovery:7,  damage:8,  hitstun:10, hitstop:5,  range:45, radius:22, shape:'rect', width:80, height:50, color:0xffaa55 },
-    power_strike: { name:'power_strike', type:'physical', startup:12,active:4, recovery:14, damage:18, hitstun:18, hitstop:10, range:60, radius:28, shape:'rect', width:100, height:60, lunge:90, cd:50, color:0xff5555 },
-    whirlwind: { name:'whirlwind', type:'physical', startup:8, active:8,  recovery:12, damage:6,  hitstun:8, hitstop:6,  range:0,  radius:65, cd:80, color:0xffd700, hits:3 },
-    dash_strike: { name:'dash_strike', type:'physical', startup:10,active:4, recovery:12, damage:13, hitstun:15, hitstop:8, range:80, radius:24, lunge:140, cd:60, color:0xff8844 },
+    // AGGRESSIVE SKILLS - OBB Hitboxes
+    slash: { name:'slash', type:'physical', startup:5, active:3, recovery:7, damage:8, hitstun:10, hitstop:5, range:45, radius:22, shape:'rect', width:80, height:50, color:0xffaa55 },
+    power_strike: { name:'power_strike', type:'physical', startup:12, active:4, recovery:14, damage:18, hitstun:18, hitstop:10, range:60, radius:28, shape:'rect', width:100, height:60, lunge:90, cd:50, color:0xff5555 },
+    whirlwind: { name:'whirlwind', type:'physical', startup:8, active:8, recovery:12, damage:6, hitstun:8, hitstop:6, range:0, radius:75, cd:80, color:0xffd700, hits:3 },
+    dash_strike: { name:'dash_strike', type:'physical', startup:10, active:4, recovery:12, damage:13, hitstun:15, hitstop:8, range:80, radius:24, shape:'rect', width:140, height:30, lunge:140, cd:60, color:0xff8844 },
+    execution: { name:'execution', type:'physical', startup:30, active:5, recovery:20, damage:40, hitstun:25, hitstop:15, range:50, radius:30, shape:'rect', width:60, height:40, lunge:60, cd:120, color:0x990aff },
 
-    // RANGED/POKE SKILLS (Mid-to-long range) - OBB Hitboxes
-    poke: { name:'poke', type:'physical', startup:6, active:2, recovery:6,  damage:6,  hitstun:8, hitstop:4,  range:70, radius:18, shape:'rect', width:120, height:30, color:0x88ccff },
-    snipe: { name:'snipe', type:'physical', startup:8, active:2, recovery:10, damage:10, hitstun:12, hitstop:6, range:140, radius:16, cd:50, color:0x77ddff },
+    // RANGED SKILLS - OBB Hitboxes (Long & Thin)
+    poke: { name:'poke', type:'physical', startup:6, active:2, recovery:6, damage:6, hitstun:8, hitstop:4, range:70, radius:18, shape:'rect', width:130, height:25, color:0x88ccff },
+    snipe: { name:'snipe', type:'physical', startup:10, active:2, recovery:12, damage:12, hitstun:14, hitstop:8, range:180, radius:16, shape:'rect', width:300, height:8, cd:70, color:0x77ddff },
+    death_ray: { name:'death_ray', type:'energy', startup:15, active:12, recovery:15, damage:3, hitstun:4, hitstop:2, range:220, radius:10, shape:'rect', width:400, height:10, hits:5, cost:40, cd:100, color:0xff3366 },
 
-    // MOBILITY/POSITIONING SKILLS
-    shield_bash: { name:'shield_bash', type:'physical', startup:10,active:3, recovery:10, damage:10, hitstun:16, hitstop:8, range:50, radius:26, lunge:40, cd:60, knockback:2.5, color:0x5599ff },
-    retreat: { name:'retreat', type:'physical', startup:6, active:2, recovery:8, damage:4, hitstun:6, hitstop:3, range:50, radius:20, lunge:-80, cd:70, color:0xaaaaff },
+    // TANK/ZONE CONTROL - OBB Hitboxes (Wide)
+    shield_bash: { name:'shield_bash', type:'physical', startup:10, active:3, recovery:10, damage:10, hitstun:16, hitstop:8, range:40, radius:26, shape:'rect', width:50, height:90, lunge:40, cd:60, knockback:2.5, color:0x5599ff },
+    wide_sweep: { name:'wide_sweep', type:'physical', startup:12, active:4, recovery:14, damage:11, hitstun:12, hitstop:7, range:35, radius:40, shape:'rect', width:30, height:140, knockback:2.5, cd:55, color:0xaeffff },
+    ground_slam: { name:'ground_slam', type:'physical', startup:14, active:5, recovery:14, damage:14, hitstun:14, hitstop:9, range:0, radius:80, cd:70, color:0xff9944 },
 
-    // ZONE CONTROL
-    ground_slam: { name:'ground_slam', type:'physical', startup:14,active:5, recovery:14, damage:14, hitstun:14, hitstop:9, range:0, radius:70, cd:70, color:0xff9944 },
+    // MOBILITY
+    retreat: { name:'retreat', type:'physical', startup:6, active:2, recovery:8, damage:4, hitstun:6, hitstop:3, range:50, radius:20, shape:'rect', width:60, height:60, lunge:-80, cd:70, color:0xaaaaff },
 
     // SUPPORT/UTILITY
-    guard: { name:'guard', type:'energy', startup:6,active:0,  recovery:6, buff:'defense', buffAmount:15, duration:180, cost:30, cd:150, color:0x9999ff },
-    area_heal: { name:'area_heal', type:'energy', startup:12,active:0,  recovery:10, heal:12, cost:35, cd:140, radius:120, isAoE:true, color:0x66ffaa },
-    quick_heal: { name:'quick_heal', type:'energy', startup:8,active:0,  recovery:8, heal:15, cost:20, cd:100, color:0x7ad7ff },
-    self_heal: { name:'self_heal', type:'energy', startup:10,active:0,  recovery:10, heal:20, cost:25, cd:120, color:0x88ff88 },
-    fortify: { name:'fortify', type:'energy', startup:8,active:0,  recovery:8, buff:'fortify', buffAmount:20, duration:240, cost:25, cd:160, color:0xccaa77 },
+    guard: { name:'guard', type:'energy', startup:6, active:0, recovery:6, buff:'defense', buffAmount:15, duration:180, cost:30, cd:150, color:0x9999ff },
+    area_heal: { name:'area_heal', type:'energy', startup:12, active:0, recovery:10, heal:12, cost:35, cd:140, radius:120, isAoE:true, color:0x66ffaa },
+    quick_heal: { name:'quick_heal', type:'energy', startup:8, active:0, recovery:8, heal:15, cost:20, cd:100, color:0x7ad7ff },
+    self_heal: { name:'self_heal', type:'energy', startup:10, active:0, recovery:10, heal:20, cost:25, cd:120, color:0x88ff88 },
+    fortify: { name:'fortify', type:'energy', startup:8, active:0, recovery:8, buff:'fortify', buffAmount:20, duration:240, cost:25, cd:160, color:0xccaa77 },
 
-    // BASIC ATTACKS
-    punch: { name:'punch', type:'physical', startup:6, active:3, recovery:8,  damage:9,  hitstun:10, hitstop:6,  range:40, radius:20, color:0xffcc66 }
+    // BASIC ATTACKS - OBB
+    punch: { name:'punch', type:'physical', startup:4, active:2, recovery:6, damage:7, hitstun:8, hitstop:4, range:35, radius:20, shape:'rect', width:40, height:40, color:0xffcc66 }
   };
 
   const Fighter = function(scene, cfg){
