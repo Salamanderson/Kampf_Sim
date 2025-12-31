@@ -1,212 +1,210 @@
 # FILE: py/ai.py
-# Brython-KI – dynamischer Top-Down Anime-Stil
+# FSM-basierte KI mit Zustandsgedächtnis
 from browser import window
 import json, math, random
 
-PY_AI_READY = False
+# Globales Gedächtnis für FSM-Zustände pro Fighter ID
+AI_MEMORY = {}
 
-def _dir(me, enemy):
-    dx = enemy["x"] - me["x"]; dy = enemy["y"] - me["y"]
-    dist = (dx*dx + dy*dy) ** 0.5
-    ang = math.atan2(dy, dx)
-    return dx, dy, dist, ang
+# Hilfsfunktionen
+def get_dist(a, b):
+    dx = b["x"] - a["x"]
+    dy = b["y"] - a["y"]
+    return (dx*dx + dy*dy) ** 0.5
 
-def decide_aggressive(state):
-    me = state["self"]; enemy = state.get("closestEnemy")
-    if not enemy: return "idle"
-    cds = state.get("cooldowns", {})
-    dx, dy, dist, ang = _dir(me, enemy)
+# --- STATES ---
 
-    # Heilung falls low
-    if me["hp"] < me["maxHp"] * 0.33 and cds.get("heal",0) <= 0:
-        return "heal"
+class State:
+    def enter(self, ctx): pass
+    def execute(self, ctx): return "idle"
+    def exit(self, ctx): pass
 
-    # Midrange → Dash-Einstieg
-    if dist > 220 and cds.get("dash",0) <= 0 and random.random()<0.6:
-        return "dash"
+class StateApproach(State):
+    """Versucht in optimale Reichweite zu kommen"""
+    def execute(self, ctx):
+        dist = ctx["dist"]
+        opt_min = ctx["opt_range_min"]
 
-    # Sehr nah → Spin (AoE)
-    if dist < 90 and cds.get("spin",0) <= 0 and random.random()<0.4:
-        return "spin"
+        # Transition: Zu nah? -> Combat
+        if dist < opt_min + 20:
+            return "COMBAT" # Signal für Zustandswechsel
 
-    # Nah → Light/Heavy mix
-    if dist <= 160:
-        return "attack_heavy" if random.random()<0.35 else "attack_light"
+        # Action
+        if ctx["cds"].get("dash", 0) <= 0 and dist > 250 and ctx["traits"]["aggression"] > 5:
+            return "dash"
 
-    # Bewegung: Annähern + leichtes Kreisen
-    return random.choice(["move_towards","strafe_left","strafe_right","move_towards","move_towards"])
+        return "move_towards"
 
-def decide_defensive(state):
-    me = state["self"]; enemy = state.get("closestEnemy")
-    if not enemy: return "idle"
-    cds = state.get("cooldowns", {})
-    dx, dy, dist, ang = _dir(me, enemy)
+class StateCombat(State):
+    """Ist in Reichweite, nutzt Skills und Movement"""
+    def enter(self, ctx):
+        ctx["timer"] = random.randint(30, 90) # Bleibe mind. X Frames im Combat
 
-    if me["hp"] < me["maxHp"] * 0.45 and cds.get("heal",0) <= 0:
-        return "heal"
+    def execute(self, ctx):
+        ctx["timer"] -= 1
+        dist = ctx["dist"]
+        opt_max = ctx["opt_range_max"]
 
-    if dist < 120:
-        # ausweichen / kreisen
-        return random.choice(["move_away","strafe_left","strafe_right","move_away","attack_light"])
+        # Transition: Gegner rennt weg? -> Approach
+        if dist > opt_max + 50:
+            return "APPROACH"
 
-    if dist > 240 and cds.get("dash",0) <= 0 and random.random()<0.4:
-        return "dash"
+        # Action: Angreifen oder Strafen
+        # Nutze Skills basierend auf Cooldowns
+        cds = ctx["cds"]
 
-    # poke
-    return "attack_light" if dist < 180 else "move_towards"
+        # 1. Prio: Special/Spin wenn viele Gegner oder nah
+        if dist < 80 and cds.get("spin", 0) <= 0:
+            return "spin"
 
-def decide_random(state):
-    acts = ["idle","move_towards","move_away","strafe_left","strafe_right","dash","attack_light","attack_heavy","spin","heal"]
-    return random.choice(acts)
+        # 2. Prio: Heavy Attack
+        if dist < 100 and cds.get("attack_heavy", 0) <= 0 and random.random() < 0.1:
+            return "attack_heavy"
 
-def decide_personality(state):
-    """AI basierend auf Personality-Traits (0-10 für jeden Trait)"""
-    me = state["self"]
-    enemy = state.get("closestEnemy")
-    ally = state.get("closestAlly")
-    personality = state.get("personality", {})
+        # 3. Prio: Light Attack
+        if dist < 120 and random.random() < 0.2:
+            return "attack_light"
 
-    # Traits extrahieren (Defaults: 5)
-    aggression = personality.get("aggression", 5)
-    teamplay = personality.get("teamplay", 5)
-    risk_taking = personality.get("riskTaking", 5)
-    positioning = personality.get("positioning", 5)
-    energy_mgmt = personality.get("energyManagement", 5)
+        # Movement: Strafen oder Lücke schließen
+        if dist > ctx["opt_range_min"]:
+            return random.choice(["move_towards", "strafe_left", "strafe_right"])
+        else:
+            return random.choice(["move_away", "strafe_left", "strafe_right"])
 
+class StateFlee(State):
+    """Rückzug bei niedrigen HP"""
+    def enter(self, ctx):
+        ctx["flee_timer"] = 60 # Renne mindestens 1 Sekunde weg
+
+    def execute(self, ctx):
+        ctx["flee_timer"] -= 1
+        dist = ctx["dist"]
+
+        # Transition: Weit genug weg oder Timer abgelaufen? -> Heal oder Approach
+        if ctx["flee_timer"] <= 0 and dist > 300:
+            if ctx["hp_ratio"] < 0.6:
+                return "HEAL"
+            return "APPROACH"
+
+        # Action: Wegrennen & Skills zur Flucht
+        if ctx["cds"].get("dash", 0) <= 0:
+            return "dash"
+        if ctx["cds"].get("spin", 0) <= 0 and dist < 80:
+            return "spin" # Defensive Spin
+
+        return "move_away"
+
+class StateHeal(State):
+    """Versucht sich zu heilen"""
+    def execute(self, ctx):
+        # Transition: Voll geheilt oder Gegner zu nah?
+        if ctx["hp_ratio"] > 0.85 or ctx["dist"] < 150:
+            return "APPROACH"
+
+        # Action
+        if ctx["cds"].get("heal", 0) <= 0:
+            return "heal"
+
+        return "move_away" # Auf Distanz bleiben während CD
+
+# Mapping der Zustands-Namen zu Klassen
+STATES = {
+    "APPROACH": StateApproach(),
+    "COMBAT": StateCombat(),
+    "FLEE": StateFlee(),
+    "HEAL": StateHeal()
+}
+
+def update_fsm(fighter_id, state_obj):
+    me = state_obj["self"]
+    enemy = state_obj.get("closestEnemy")
+
+    # 1. Memory initialisieren
+    if fighter_id not in AI_MEMORY:
+        AI_MEMORY[fighter_id] = {
+            "current_state": "APPROACH",
+            "timer": 0,
+            "flee_timer": 0
+        }
+
+    mem = AI_MEMORY[fighter_id]
+
+    # Keine Gegner? Idle.
     if not enemy:
         return "idle"
 
-    dx, dy, dist, ang = _dir(me, enemy)
+    # 2. Kontext aufbauen (Werte berechnen)
+    traits = state_obj.get("personality", {})
+    # Fallbacks falls Traits fehlen
+    agg = traits.get("aggression", 5)
+    risk = traits.get("riskTaking", 5)
+
+    dist = get_dist(me, enemy)
     hp_ratio = me["hp"] / me["maxHp"]
-    en_ratio = me["en"] / me["maxEn"]
 
-    # === ENERGY MANAGEMENT ===
-    energy_threshold = 0.3 + (energy_mgmt / 30.0)
-    low_energy = en_ratio < energy_threshold
+    # Berechne dynamische Schwellwerte basierend auf Personality
+    flee_threshold = 0.3 - (risk * 0.02) # Riskant: flieht erst bei 10%, Vorsichtig: bei 28%
+    opt_range_min = 60 + (10 - agg) * 10  # Aggro: nah (60), Defensiv: fern (160)
 
-    # === ESCAPE/RETREAT (Low HP + High Positioning) ===
-    # Use "spin" (3rd skill) if it's a retreat skill when low HP and too close
-    escape_threshold = 0.3 - (risk_taking / 50.0)
-    if hp_ratio < escape_threshold and positioning >= 6 and dist < 100:
-        if random.random() < 0.6:
-            return "spin"  # May be retreat skill depending on loadout
+    ctx = {
+        "dist": dist,
+        "hp_ratio": hp_ratio,
+        "cds": state_obj.get("cooldowns", {}),
+        "traits": traits,
+        "opt_range_min": opt_range_min,
+        "opt_range_max": opt_range_min + 100,
+        "timer": mem.get("timer", 0),
+        "flee_timer": mem.get("flee_timer", 0)
+    }
 
-    # === HEAL DECISION ===
-    # WICHTIG: Keine Cooldown-Checks hier! tryHeal() macht das.
-    heal_threshold = 0.5 - (risk_taking / 40.0)
-    if hp_ratio < heal_threshold and en_ratio > 0.25:
-        return "heal"
+    # 3. Globale Transitionen (Notfälle haben Vorrang)
+    current = mem["current_state"]
+    next_state = current
 
-    # === TEAMPLAY: Support Ally ===
-    if teamplay >= 7 and ally:
-        ally_dist = ally.get("dist", 999)
-        ally_hp_ratio = ally.get("hp", 100) / 100  # Rough estimate
+    # Notfall: Flucht
+    if hp_ratio < flee_threshold and current != "FLEE" and current != "HEAL":
+        next_state = "FLEE"
 
-        # Move towards distant ally
-        if ally_dist > 150 and random.random() < (teamplay / 15.0):
-            ally_dx = ally["x"] - me["x"]
-            ally_dy = ally["y"] - me["y"]
-            if abs(ally_dx) > abs(ally_dy):
-                return "strafe_left" if ally_dx < 0 else "strafe_right"
-            else:
-                return "move_towards" if ally_dy > 0 else "move_away"
+    # Notfall: Heilung möglich und nötig
+    if hp_ratio < 0.6 and current != "COMBAT" and current != "FLEE" and ctx["cds"].get("heal", 0) <= 0:
+        next_state = "HEAL"
 
-    # === POSITIONING-BASED RANGE CONTROL ===
-    # High positioning = prefer optimal range (kiting)
-    # Low positioning = face-tank
-    if positioning >= 7:
-        # Ranged/Kiting playstyle
-        optimal_dist = 110 + (positioning * 8)  # 110-190 range
+    # 4. Zustands-Logik ausführen
+    state_cls = STATES[next_state]
 
-        if dist < optimal_dist - 50:
-            # Too close, kite away
-            if random.random() < 0.5:
-                return "move_away"
-        elif dist > optimal_dist + 70:
-            # Too far, close in (but slowly)
-            if random.random() < 0.35:
-                return "move_towards"
-    elif positioning <= 3:
-        # Aggressive close-range
-        optimal_dist = 60
-        if dist > optimal_dist + 40 and random.random() < 0.6:
-            return "move_towards"
+    # Wenn Zustand gewechselt hat, Enter aufrufen
+    if next_state != current:
+        state_cls.enter(ctx) # Kann Timer setzen
+        # Werte zurück ins Memory schreiben
+        mem["timer"] = ctx.get("timer", 0)
+        mem["flee_timer"] = ctx.get("flee_timer", 0)
 
-    # === DASH (Risk-Taking + Gap Closing) ===
-    # Use dash to close distance when far away
-    dash_chance = 0.25 + (risk_taking / 25.0)
-    if aggression >= 6:
-        # Aggressive fighters dash in more
-        if dist > 180 and random.random() < dash_chance:
-            return "dash"
-    elif positioning <= 4:
-        # Low positioning tanks just walk in
-        if dist > 220 and random.random() < (dash_chance * 0.6):
-            return "dash"
+    # Execute gibt entweder eine Action string zurück ODER einen neuen State-Namen
+    result = state_cls.execute(ctx)
 
-    # === SPECIAL ATTACKS (Heavy/Spin) ===
-    # Spin/AoE at close range
-    spin_chance = (aggression + risk_taking) / 40.0
-    if dist < 80 and random.random() < spin_chance and not low_energy:
-        return "spin"
+    # Prüfen ob Ergebnis ein Zustandswechsel ist
+    if result in STATES:
+        mem["current_state"] = result
+        # Rekursiv den neuen Zustand sofort ausführen (damit kein Frame verloren geht)
+        return update_fsm(fighter_id, state_obj)
 
-    # Heavy attack (gap closer or burst)
-    heavy_range = 90 + (aggression * 10)
-    if dist <= heavy_range and dist > 40:
-        heavy_chance = (aggression + risk_taking) / 30.0
-        if random.random() < heavy_chance and not low_energy:
-            return "attack_heavy"  # May be dash_strike depending on loadout
+    # Zustand beibehalten
+    mem["current_state"] = next_state
 
-    # === BASIC ATTACK ===
-    # Attack at appropriate range
-    if positioning >= 7:
-        # Ranged fighters attack from far
-        attack_range = 120 + (positioning * 10)
-    else:
-        # Melee fighters attack close
-        attack_range = 70 + (aggression * 8)
+    # Timer-Updates speichern
+    mem["timer"] = ctx.get("timer", 0)
+    mem["flee_timer"] = ctx.get("flee_timer", 0)
 
-    if dist <= attack_range:
-        if low_energy or random.random() > (aggression / 15.0):
-            return "attack_light"
-        else:
-            return "attack_heavy" if random.random() < 0.3 else "attack_light"
-
-    # === MOVEMENT ===
-    # Defensive fighters keep distance
-    safe_distance = 130 - (aggression * 8)
-    if aggression <= 4 and dist < safe_distance:
-        moves = ["move_away", "strafe_left", "strafe_right", "move_away"]
-        return random.choice(moves)
-
-    # Default: Approach with circling (more circling for high positioning)
-    if positioning >= 6:
-        # Kiting fighters circle more
-        moves = ["move_towards", "strafe_left", "strafe_right", "strafe_left", "strafe_right"]
-    else:
-        # Aggressive fighters rush in
-        moves = ["move_towards"] * (aggression // 2 + 1)
-        moves += ["strafe_left", "strafe_right"]
-
-    return random.choice(moves)
+    return result
 
 def PY_AI_DECIDE(profile_id, state_json):
     try:
         state = json.loads(state_json)
-    except Exception:
+        me_id = state["self"]["id"]
+        return update_fsm(me_id, state)
+    except Exception as e:
+        # Fallback bei Fehlern
         return "idle"
-
-    # Nutze Personality AI wenn personality vorhanden
-    if "personality" in state and state["personality"]:
-        return decide_personality(state)
-
-    # Fallback auf alte Profile
-    if profile_id == "aggressive":
-        return decide_aggressive(state)
-    if profile_id == "defensive":
-        return decide_defensive(state)
-    return decide_random(state)
 
 window.PY_AI_DECIDE = PY_AI_DECIDE
 window.PY_AI_READY = True
-PY_AI_READY = True

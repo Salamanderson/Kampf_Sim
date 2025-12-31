@@ -15,6 +15,9 @@
         "hitstop": 5,
         "range": 45,
         "radius": 22,
+        "shape": "rect",
+        "width": 80,
+        "height": 50,
         "color": 16754773
       }
     },
@@ -33,6 +36,9 @@
         "hitstop": 10,
         "range": 60,
         "radius": 28,
+        "shape": "rect",
+        "width": 100,
+        "height": 60,
         "lunge": 90,
         "cd": 50,
         "color": 16733525
@@ -93,6 +99,9 @@
         "hitstop": 4,
         "range": 70,
         "radius": 18,
+        "shape": "rect",
+        "width": 120,
+        "height": 30,
         "color": 8966399
       }
     },
