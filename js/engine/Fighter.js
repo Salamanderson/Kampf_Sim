@@ -85,13 +85,30 @@
 
     // Loadout (welche Moves erlaubt)
     const loadout = cfg.loadout && Array.isArray(cfg.loadout) ? cfg.loadout.slice() : ['slash','power_strike','whirlwind','quick_heal'];
-    console.log('[Fighter] Constructor: id=', this.id, 'loadout=', loadout, 'cfg.loadout=', cfg.loadout);
+    console.log('[Fighter] Constructor: id=', this.id, 'loadout=', loadout);
+
     this.moves = {};
+
+    // Hilfs-Map für Skills aus den geladenen JSON-Daten erstellen
+    const globalSkills = {};
+    if (window.GameData && window.GameData.skills) {
+       window.GameData.skills.forEach(s => globalSkills[s.id] = s);
+    }
+
     loadout.forEach(k => {
-      if (defaultMoves[k]) {
+      // 1. Priorität: Daten aus skills.json (Live-Daten)
+      if (globalSkills[k]) {
+        // Skill-Daten aus JSON flach kopieren (stats nach oben heben)
+        const jsonSkill = globalSkills[k];
+        this.moves[k] = Object.assign({}, jsonSkill.stats || {}, { name: k, type: jsonSkill.type });
+      }
+      // 2. Priorität: Hardcoded DefaultMoves (Fallback für Sicherheit)
+      else if (defaultMoves[k]) {
+        console.warn('[Fighter] Skill not found in JSON, using fallback:', k);
         this.moves[k] = Object.assign({}, defaultMoves[k]);
-      } else {
-        console.warn('[Fighter] Skill not found in defaultMoves:', k);
+      }
+      else {
+        console.warn('[Fighter] Skill not found anywhere:', k);
       }
     });
     console.log('[Fighter] Final moves:', Object.keys(this.moves));
