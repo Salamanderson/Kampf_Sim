@@ -3,14 +3,14 @@
   const TWO_PI = Math.PI * 2;
 
   const defaultMoves = {
-    // AGGRESSIVE SKILLS (Close-range fighters)
-    slash: { name:'slash', type:'physical', startup:5, active:3, recovery:7,  damage:8,  hitstun:10, hitstop:5,  range:45, radius:22, color:0xffaa55 },
-    power_strike: { name:'power_strike', type:'physical', startup:12,active:4, recovery:14, damage:18, hitstun:18, hitstop:10, range:60, radius:28, lunge:90, cd:50, color:0xff5555 },
+    // AGGRESSIVE SKILLS (Close-range fighters) - OBB Hitboxes
+    slash: { name:'slash', type:'physical', startup:5, active:3, recovery:7,  damage:8,  hitstun:10, hitstop:5,  range:45, radius:22, shape:'rect', width:80, height:50, color:0xffaa55 },
+    power_strike: { name:'power_strike', type:'physical', startup:12,active:4, recovery:14, damage:18, hitstun:18, hitstop:10, range:60, radius:28, shape:'rect', width:100, height:60, lunge:90, cd:50, color:0xff5555 },
     whirlwind: { name:'whirlwind', type:'physical', startup:8, active:8,  recovery:12, damage:6,  hitstun:8, hitstop:6,  range:0,  radius:65, cd:80, color:0xffd700, hits:3 },
     dash_strike: { name:'dash_strike', type:'physical', startup:10,active:4, recovery:12, damage:13, hitstun:15, hitstop:8, range:80, radius:24, lunge:140, cd:60, color:0xff8844 },
 
-    // RANGED/POKE SKILLS (Mid-to-long range)
-    poke: { name:'poke', type:'physical', startup:6, active:2, recovery:6,  damage:6,  hitstun:8, hitstop:4,  range:70, radius:18, color:0x88ccff },
+    // RANGED/POKE SKILLS (Mid-to-long range) - OBB Hitboxes
+    poke: { name:'poke', type:'physical', startup:6, active:2, recovery:6,  damage:6,  hitstun:8, hitstop:4,  range:70, radius:18, shape:'rect', width:120, height:30, color:0x88ccff },
     snipe: { name:'snipe', type:'physical', startup:8, active:2, recovery:10, damage:10, hitstun:12, hitstop:6, range:140, radius:16, cd:50, color:0x77ddff },
 
     // MOBILITY/POSITIONING SKILLS
@@ -402,17 +402,39 @@
         // Hitbox Registration
         if (this.moveFrame>=actStart && this.moveFrame<=actEnd){
           const ang = this.facingAngle;
-          const cx = this.x + (m.range? Math.cos(ang)*(this.radius + m.range*0.6) : 0);
-          const cy = this.y + (m.range? Math.sin(ang)*(this.radius + m.range*0.6) : 0);
+          // Offset berechnen (wie weit vor dem Spieler)
+          const rangeOffset = m.range ? (this.radius + m.range*0.5) : 0;
+          const cx = this.x + Math.cos(ang) * rangeOffset;
+          const cy = this.y + Math.sin(ang) * rangeOffset;
+
           const pos = (m.range===0) ? {x:this.x, y:this.y} : {x:cx, y:cy};
 
           const knockMultiplier = m.knockback || 1.0;
+
+          // Prüfen ob Rechteck oder Kreis (Fallback)
+          const isRect = (m.shape === 'rect');
+
           const hb = {
-            shape:'circle', owner:this, kind:this.moveName, type:m.type||'physical',
-            x: pos.x, y: pos.y, r: m.radius || 20,
-            damage:(m.damage||0)*this.stats.damageScale,
-            hitstun:m.hitstun||10, hitstop:m.hitstop||6,
-            knock:{ x: Math.cos(ang)*140*knockMultiplier, y: Math.sin(ang)*140*knockMultiplier }
+            owner: this,
+            kind: this.moveName,
+            type: m.type||'physical',
+
+            // Positionsdaten
+            x: pos.x,
+            y: pos.y,
+            angle: ang, // WICHTIG: Die Rotation des Spielers übergeben
+
+            // Formdaten
+            shape: isRect ? 'rect' : 'circle',
+            w: m.width || 40,
+            h: m.height || 40,
+            r: m.radius || 20, // Fallback Radius
+
+            // Combat Stats
+            damage: (m.damage||0) * this.stats.damageScale,
+            hitstun: m.hitstun||10,
+            hitstop: m.hitstop||6,
+            knock: { x: Math.cos(ang)*140*knockMultiplier, y: Math.sin(ang)*140*knockMultiplier }
           };
           this.scene.hitboxes.register(hb);
 
