@@ -224,12 +224,12 @@
       },
       closestEnemy: closest ? {
         id: closest.id,
-        x: closest.x,
-        y: closest.y,
-        vx: closest.vx,  // Geschwindigkeit X für Prediction
-        vy: closest.vy,  // Geschwindigkeit Y für Prediction
-        hp: closest.hp,
-        state: closest.state  // Zustand (hitstun, attack, etc.)
+        x: closest.x || 0,
+        y: closest.y || 0,
+        vx: closest.vx || 0,  // Geschwindigkeit X für Prediction
+        vy: closest.vy || 0,  // Geschwindigkeit Y für Prediction
+        hp: closest.hp || 0,
+        state: closest.state || 'idle'  // Zustand (hitstun, attack, etc.)
       } : null,
       closestAlly: closestAlly ? { id:closestAlly.id, x:closestAlly.x, y:closestAlly.y, hp:closestAlly.hp, dist:aminDist } : null,
       personality: this.personality,
@@ -560,6 +560,12 @@
     }
 
     if (this.state==='dash'){
+      this.stateTimer--;
+      if (this.stateTimer<=0) this.state='idle';
+    }
+
+    // HITSTUN HANDLER - Muss runterzählen!
+    if (this.state==='hitstun'){
       this.stateTimer--;
       if (this.stateTimer<=0) this.state='idle';
     }

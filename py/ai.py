@@ -214,6 +214,8 @@ def PY_AI_DECIDE(profile_id, state_json):
         me_id = state["self"]["id"]
         return update_fsm(me_id, state)
     except Exception as e:
+        print(f"[PY_AI] Error: {e}")
+        print(f"[PY_AI] JSON (first 200 chars): {state_json[:200] if state_json else 'None'}")
         return "idle"
 
 window.PY_AI_DECIDE = PY_AI_DECIDE
