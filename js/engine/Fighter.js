@@ -242,6 +242,13 @@
 
   Fighter.prototype.applyAIAction = function(action){
     if (this.ko) return;
+
+    // KRITISCH: Wenn wir gerade in einem Angriff sind, keine neuen Aktionen erlauben!
+    // Sonst wird der Attack-State überschrieben und der Skill bricht ab.
+    if (this.state.startsWith('attack_') || this.state === 'hitstun' || this.state === 'dash') {
+      return; // Warte bis die aktuelle Aktion fertig ist
+    }
+
     // Map generic actions to character-specific skills
     switch(action){
       case 'move_towards': this._accelerateTo(1.0); this.state='move'; break;
