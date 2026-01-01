@@ -222,7 +222,15 @@
         en:this.en, maxEn:this.maxEn,
         state:this.state
       },
-      closestEnemy: closest ? { id:closest.id, x:closest.x, y:closest.y, hp:closest.hp } : null,
+      closestEnemy: closest ? {
+        id: closest.id,
+        x: closest.x,
+        y: closest.y,
+        vx: closest.vx,  // Geschwindigkeit X für Prediction
+        vy: closest.vy,  // Geschwindigkeit Y für Prediction
+        hp: closest.hp,
+        state: closest.state  // Zustand (hitstun, attack, etc.)
+      } : null,
       closestAlly: closestAlly ? { id:closestAlly.id, x:closestAlly.x, y:closestAlly.y, hp:closestAlly.hp, dist:aminDist } : null,
       personality: this.personality,
       cooldowns: Object.assign({}, this.cooldowns),
@@ -278,8 +286,40 @@
     const foes = this.scene.fighters?.filter(o=>o.teamId!==this.teamId && !o.ko) || [];
     if (!foes.length) return {dx:0,dy:0,dist:1e9,ang:this.facingAngle};
     const e = foes[0];
-    const dx = e.x - this.x, dy = e.y - this.y;
+
+    // Basis-Ziel: Aktuelle Position des Gegners
+    let targetX = e.x;
+    let targetY = e.y;
+
+    // --- MODUL A: PREDICTIVE AIMING ---
+    // Wir berechnen den Vorhaltepunkt nur, wenn wir gerade einen Angriff vorbereiten.
+    if (this.state.startsWith('attack_') && this.currentMove && this.moveFrame < this.currentMove.startup) {
+
+       // 1. Wie viel Zeit vergeht noch bis zum "Active Frame"?
+       const framesToHit = this.currentMove.startup - this.moveFrame;
+       const timeToHit = framesToHit / 60.0;
+
+       // 2. Linear Prediction: Zukunft = Ort + (Geschwindigkeit * Zeit)
+       // Faktor 0.85 verhindert Overshooting bei Zick-Zack-Lauf
+       const predictionFactor = 0.85;
+
+       targetX += e.vx * timeToHit * predictionFactor;
+       targetY += e.vy * timeToHit * predictionFactor;
+
+       // Debug: Zeichnet ein Kreuz am vorhergesagten Punkt
+       if (this.scene.hitboxes && this.scene.hitboxes._debug) {
+         const g = this.scene.hitboxes.graphics;
+         g.lineStyle(2, 0xff0000, 0.6);
+         g.lineBetween(targetX-6, targetY-6, targetX+6, targetY+6);
+         g.lineBetween(targetX+6, targetY-6, targetX-6, targetY+6);
+       }
+    }
+    // ----------------------------------
+
+    const dx = targetX - this.x;
+    const dy = targetY - this.y;
     const ang = Math.atan2(dy, dx);
+
     return { dx, dy, dist: Math.hypot(dx,dy), ang };
   };
 
