@@ -390,6 +390,13 @@
     });
     this.currentMove = m;
     this.state = 'attack_'+kind; this.moveName = kind; this.moveFrame=0; this.stateTimer = m.startup + (m.active||0) + m.recovery;
+
+    // WICHTIG: Velocity stoppen wenn Skill startet (außer bei Lunge-Skills)
+    if (!m.lunge) {
+      this.vx = 0;
+      this.vy = 0;
+    }
+
     this.scene.events.emit('skill_used', { fighter:this, move:kind });
   };
 
@@ -565,8 +572,15 @@
     this.x += this.vx * (dt/1000);
     this.y += this.vy * (dt/1000);
 
-    // Facing
-    const t = this._dirToClosest(); this.facingAngle = t.ang;
+    // Facing - während Attack-Startup für Predictive Aiming, sonst normal
+    if (this.state.startsWith('attack_') && this.currentMove && this.moveFrame < this.currentMove.startup) {
+      // Während Startup: Predictive Aiming aktiv (in _dirToClosest)
+      const t = this._dirToClosest(); this.facingAngle = t.ang;
+    } else if (!this.state.startsWith('attack_')) {
+      // Nur wenn NICHT im Angriff: Normal zum Gegner schauen
+      const t = this._dirToClosest(); this.facingAngle = t.ang;
+    }
+    // Während Active/Recovery: Facing beibehalten (nicht drehen)
 
     // Arena-Bounds
     const A = world.arena; const pad = this.radius+2;
