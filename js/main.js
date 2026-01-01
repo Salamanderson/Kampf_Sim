@@ -1345,61 +1345,97 @@
 
   // ----- Boot -----
   window.addEventListener('load', async ()=>{
-    // Check if we have data in localStorage
-    const hasLocalData = localStorage.getItem('vibecode_data_initialized');
+    // IMMER zuerst JSON-Dateien laden (frische Basis-Daten)
+    console.log('[Main] Loading base data from JSON files...');
 
-    if (!hasLocalData){
-      // FIRST RUN: Load from JSON and save to localStorage
-      console.log('[Main] First run - loading defaults from JSON files');
+    // Load base data from JSON files
+    try{
+      const resp = await fetch('data/characters.json');
+      if (resp.ok){
+        window.GameData = await resp.json();
+      }
+    }catch(e){ console.warn('characters.json konnte nicht geladen werden'); }
 
-      // Load base data from JSON files
-      try{
-        const resp = await fetch('data/characters.json');
-        if (resp.ok){
-          window.GameData = await resp.json();
+    // Items laden
+    try{
+      const resp = await fetch('data/items.json');
+      if (resp.ok){
+        const itemsData = await resp.json();
+        window.GameData.items = itemsData.items || [];
+      }
+    }catch(e){ console.warn('items.json konnte nicht geladen werden'); }
+
+    // Load skills.json
+    try{
+      const skillResp = await fetch('data/skills.json');
+      if (skillResp.ok){
+        const skillsData = await skillResp.json();
+        window.GameData.skills = skillsData.skills || [];
+        window.GameData.skillCategories = skillsData.categories || {};
+      }
+    }catch(e){ console.warn('skills.json konnte nicht geladen werden'); }
+
+    // Load AI profiles
+    try{
+      const aiResp = await fetch('data/ai_profiles.json');
+      if (aiResp.ok){
+        const aiProfiles = await aiResp.json();
+        window.GameData.aiProfiles = aiProfiles || [];
+      }
+    }catch(e){ console.warn('ai_profiles.json konnte nicht geladen werden'); }
+
+    console.log('[Main] JSON loaded:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items,', window.GameData.aiProfiles?.length, 'AI profiles');
+
+    // MERGE mit localStorage: Custom-Daten behalten
+    const savedData = localStorage.getItem('vibecode_all_data');
+    if (savedData){
+      try {
+        const localData = JSON.parse(savedData);
+        console.log('[Main] Merging with localStorage data...');
+
+        // JSON-IDs sammeln für Duplikat-Check
+        const jsonCharIds = new Set((window.GameData.characters || []).map(c => c.id));
+        const jsonSkillIds = new Set((window.GameData.skills || []).map(s => s.id));
+        const jsonItemIds = new Set((window.GameData.items || []).map(i => i.id));
+
+        // Custom Characters aus localStorage hinzufügen (die NICHT in JSON sind)
+        if (localData.characters){
+          localData.characters.forEach(c => {
+            if (!jsonCharIds.has(c.id)){
+              window.GameData.characters.push(c);
+              console.log('[Main] Restored custom character:', c.name);
+            }
+          });
         }
-      }catch(e){ console.warn('characters.json konnte nicht geladen werden'); }
 
-      // Items laden
-      try{
-        const resp = await fetch('data/items.json');
-        if (resp.ok){
-          const itemsData = await resp.json();
-          window.GameData.items = itemsData.items || [];
+        // Custom Skills aus localStorage hinzufügen
+        if (localData.skills){
+          localData.skills.forEach(s => {
+            if (!jsonSkillIds.has(s.id)){
+              window.GameData.skills.push(s);
+              console.log('[Main] Restored custom skill:', s.name);
+            }
+          });
         }
-      }catch(e){ console.warn('items.json konnte nicht geladen werden'); }
 
-      // Load skills.json
-      try{
-        const skillResp = await fetch('data/skills.json');
-        if (skillResp.ok){
-          const skillsData = await skillResp.json();
-          window.GameData.skills = skillsData.skills || [];
-          window.GameData.skillCategories = skillsData.categories || {};
+        // Custom Items aus localStorage hinzufügen
+        if (localData.items){
+          localData.items.forEach(i => {
+            if (!jsonItemIds.has(i.id)){
+              window.GameData.items.push(i);
+              console.log('[Main] Restored custom item:', i.name);
+            }
+          });
         }
-      }catch(e){ console.warn('skills.json konnte nicht geladen werden'); }
 
-      // Load AI profiles
-      try{
-        const aiResp = await fetch('data/ai_profiles.json');
-        if (aiResp.ok){
-          const aiProfiles = await aiResp.json();
-          window.GameData.aiProfiles = aiProfiles || [];
-        }
-      }catch(e){ console.warn('ai_profiles.json konnte nicht geladen werden'); }
-
-      // Save to localStorage for future use
-      saveAllDataToLocal();
-      localStorage.setItem('vibecode_data_initialized', 'true');
-      console.log('[Main] Initial data saved to localStorage');
-      console.log('[Main] Total:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items,', window.GameData.aiProfiles?.length, 'AI profiles');
-
-    } else {
-      // SUBSEQUENT RUNS: Load everything from localStorage
-      console.log('[Main] Loading all data from localStorage');
-      loadAllDataFromLocal();
-      console.log('[Main] Loaded:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items,', window.GameData.aiProfiles?.length, 'AI profiles');
+      } catch(e){
+        console.warn('[Main] Could not merge localStorage data:', e);
+      }
     }
+
+    // Save merged data back to localStorage
+    saveAllDataToLocal();
+    console.log('[Main] Final data:', window.GameData.characters?.length, 'characters,', window.GameData.skills?.length, 'skills,', window.GameData.items?.length, 'items,', window.GameData.aiProfiles?.length, 'AI profiles');
 
     // Migrate existing characters to have AI profiles
     migrateCharactersToAIProfiles();

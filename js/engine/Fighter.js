@@ -85,13 +85,30 @@
 
     // Loadout (welche Moves erlaubt)
     const loadout = cfg.loadout && Array.isArray(cfg.loadout) ? cfg.loadout.slice() : ['slash','power_strike','whirlwind','quick_heal'];
-    console.log('[Fighter] Constructor: id=', this.id, 'loadout=', loadout, 'cfg.loadout=', cfg.loadout);
+    console.log('[Fighter] Constructor: id=', this.id, 'loadout=', loadout);
+
     this.moves = {};
+
+    // Hilfs-Map für Skills aus den geladenen JSON-Daten erstellen
+    const globalSkills = {};
+    if (window.GameData && window.GameData.skills) {
+       window.GameData.skills.forEach(s => globalSkills[s.id] = s);
+    }
+
     loadout.forEach(k => {
-      if (defaultMoves[k]) {
+      // 1. Priorität: Daten aus skills.json (Live-Daten)
+      if (globalSkills[k]) {
+        // Skill-Daten aus JSON flach kopieren (stats nach oben heben)
+        const jsonSkill = globalSkills[k];
+        this.moves[k] = Object.assign({}, jsonSkill.stats || {}, { name: k, type: jsonSkill.type });
+      }
+      // 2. Priorität: Hardcoded DefaultMoves (Fallback für Sicherheit)
+      else if (defaultMoves[k]) {
+        console.warn('[Fighter] Skill not found in JSON, using fallback:', k);
         this.moves[k] = Object.assign({}, defaultMoves[k]);
-      } else {
-        console.warn('[Fighter] Skill not found in defaultMoves:', k);
+      }
+      else {
+        console.warn('[Fighter] Skill not found anywhere:', k);
       }
     });
     console.log('[Fighter] Final moves:', Object.keys(this.moves));
@@ -171,12 +188,45 @@
       if (d<aminDist){ aminDist=d; closestAlly=a; }
     }
 
+    // --- SKILL INFO FÜR KI ---
+    // Mappe die 4 Slots auf generische Namen, damit Python sie einfach prüfen kann
+    const moveKeys = Object.keys(this.moves);
+    const skillInfo = {};
+    const slots = ['light', 'heavy', 'spin', 'heal']; // Mapping analog zu applyAIAction
+
+    slots.forEach((slotName, idx) => {
+      const m = this.moves[moveKeys[idx]];
+      if(m) {
+        // Effektive Reichweite für die KI berechnen
+        // Wenn range 0 (Melee AoE), nutzen wir den Radius als "Reichweite"
+        const effRange = (m.range && m.range > 0) ? m.range : (m.radius || 40);
+
+        skillInfo[slotName] = {
+          valid: true,
+          id: m.name || moveKeys[idx],
+          range: effRange,
+          cost: m.cost || 0,
+          is_ready: this.cooldowns[moveKeys[idx]] <= 0
+        };
+      } else {
+        skillInfo[slotName] = { valid: false, range: 0, cost: 0, is_ready: false };
+      }
+    });
+
     return {
-      self: { id:this.id, teamId:this.teamId, x:this.x, y:this.y, vx:this.vx, vy:this.vy, hp:this.hp, maxHp:this.maxHp, en:this.en, maxEn:this.maxEn, state:this.state },
+      self: {
+        id:this.id, teamId:this.teamId,
+        x:this.x, y:this.y,
+        vx:this.vx, vy:this.vy,
+        hp:this.hp, maxHp:this.maxHp,
+        en:this.en, maxEn:this.maxEn,
+        state:this.state
+      },
       closestEnemy: closest ? { id:closest.id, x:closest.x, y:closest.y, hp:closest.hp } : null,
       closestAlly: closestAlly ? { id:closestAlly.id, x:closestAlly.x, y:closestAlly.y, hp:closestAlly.hp, dist:aminDist } : null,
       personality: this.personality,
       cooldowns: Object.assign({}, this.cooldowns),
+      skills: skillInfo, // NEU: Skill-Daten für intelligente KI
       env: { arena: env.arena },
       frame: (this.scene.game.loop.frame|0)
     };
