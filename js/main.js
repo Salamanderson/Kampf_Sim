@@ -18,9 +18,18 @@
     const wantBry = !!useBrython && checkBrythonReady();
     if (wantBry){
       try{
-        const res = window.PY_AI_DECIDE(profileId, JSON.stringify(stateObj));
+        // Sichere JSON-Serialisierung: NaN, Infinity, undefined entfernen
+        const safeState = JSON.parse(JSON.stringify(stateObj, (key, value) => {
+          if (value === undefined || value === null) return null;
+          if (typeof value === 'number' && !isFinite(value)) return 0;
+          return value;
+        }));
+        const jsonStr = JSON.stringify(safeState);
+        const res = window.PY_AI_DECIDE(profileId, jsonStr);
         if (typeof res === 'string' && res) return res;
-      }catch(e){}
+      }catch(e){
+        console.error('[AI] Brython error:', e.message || e);
+      }
     }
     return jsFallbackAI(profileId, stateObj);
   };

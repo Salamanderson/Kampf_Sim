@@ -222,7 +222,15 @@
         en:this.en, maxEn:this.maxEn,
         state:this.state
       },
-      closestEnemy: closest ? { id:closest.id, x:closest.x, y:closest.y, hp:closest.hp } : null,
+      closestEnemy: closest ? {
+        id: closest.id,
+        x: closest.x || 0,
+        y: closest.y || 0,
+        vx: closest.vx || 0,  // Geschwindigkeit X für Prediction
+        vy: closest.vy || 0,  // Geschwindigkeit Y für Prediction
+        hp: closest.hp || 0,
+        state: closest.state || 'idle'  // Zustand (hitstun, attack, etc.)
+      } : null,
       closestAlly: closestAlly ? { id:closestAlly.id, x:closestAlly.x, y:closestAlly.y, hp:closestAlly.hp, dist:aminDist } : null,
       personality: this.personality,
       cooldowns: Object.assign({}, this.cooldowns),
@@ -234,6 +242,13 @@
 
   Fighter.prototype.applyAIAction = function(action){
     if (this.ko) return;
+
+    // KRITISCH: Wenn wir gerade in einem Angriff sind, keine neuen Aktionen erlauben!
+    // Sonst wird der Attack-State überschrieben und der Skill bricht ab.
+    if (this.state.startsWith('attack_') || this.state === 'hitstun' || this.state === 'dash') {
+      return; // Warte bis die aktuelle Aktion fertig ist
+    }
+
     // Map generic actions to character-specific skills
     switch(action){
       case 'move_towards': this._accelerateTo(1.0); this.state='move'; break;
@@ -278,8 +293,40 @@
     const foes = this.scene.fighters?.filter(o=>o.teamId!==this.teamId && !o.ko) || [];
     if (!foes.length) return {dx:0,dy:0,dist:1e9,ang:this.facingAngle};
     const e = foes[0];
-    const dx = e.x - this.x, dy = e.y - this.y;
+
+    // Basis-Ziel: Aktuelle Position des Gegners
+    let targetX = e.x;
+    let targetY = e.y;
+
+    // --- MODUL A: PREDICTIVE AIMING ---
+    // Wir berechnen den Vorhaltepunkt nur, wenn wir gerade einen Angriff vorbereiten.
+    if (this.state.startsWith('attack_') && this.currentMove && this.moveFrame < this.currentMove.startup) {
+
+       // 1. Wie viel Zeit vergeht noch bis zum "Active Frame"?
+       const framesToHit = this.currentMove.startup - this.moveFrame;
+       const timeToHit = framesToHit / 60.0;
+
+       // 2. Linear Prediction: Zukunft = Ort + (Geschwindigkeit * Zeit)
+       // Faktor 0.85 verhindert Overshooting bei Zick-Zack-Lauf
+       const predictionFactor = 0.85;
+
+       targetX += e.vx * timeToHit * predictionFactor;
+       targetY += e.vy * timeToHit * predictionFactor;
+
+       // Debug: Zeichnet ein Kreuz am vorhergesagten Punkt
+       if (this.scene.hitboxes && this.scene.hitboxes._debug) {
+         const g = this.scene.hitboxes.graphics;
+         g.lineStyle(2, 0xff0000, 0.6);
+         g.lineBetween(targetX-6, targetY-6, targetX+6, targetY+6);
+         g.lineBetween(targetX+6, targetY-6, targetX-6, targetY+6);
+       }
+    }
+    // ----------------------------------
+
+    const dx = targetX - this.x;
+    const dy = targetY - this.y;
     const ang = Math.atan2(dy, dx);
+
     return { dx, dy, dist: Math.hypot(dx,dy), ang };
   };
 
@@ -343,6 +390,13 @@
     });
     this.currentMove = m;
     this.state = 'attack_'+kind; this.moveName = kind; this.moveFrame=0; this.stateTimer = m.startup + (m.active||0) + m.recovery;
+
+    // WICHTIG: Velocity stoppen wenn Skill startet (außer bei Lunge-Skills)
+    if (!m.lunge) {
+      this.vx = 0;
+      this.vy = 0;
+    }
+
     this.scene.events.emit('skill_used', { fighter:this, move:kind });
   };
 
@@ -510,6 +564,12 @@
       if (this.stateTimer<=0) this.state='idle';
     }
 
+    // HITSTUN HANDLER - Muss runterzählen!
+    if (this.state==='hitstun'){
+      this.stateTimer--;
+      if (this.stateTimer<=0) this.state='idle';
+    }
+
     // Physik
     this._applyFriction();
     const maxSp = this.stats.moveSpeed;
@@ -518,8 +578,15 @@
     this.x += this.vx * (dt/1000);
     this.y += this.vy * (dt/1000);
 
-    // Facing
-    const t = this._dirToClosest(); this.facingAngle = t.ang;
+    // Facing - während Attack-Startup für Predictive Aiming, sonst normal
+    if (this.state.startsWith('attack_') && this.currentMove && this.moveFrame < this.currentMove.startup) {
+      // Während Startup: Predictive Aiming aktiv (in _dirToClosest)
+      const t = this._dirToClosest(); this.facingAngle = t.ang;
+    } else if (!this.state.startsWith('attack_')) {
+      // Nur wenn NICHT im Angriff: Normal zum Gegner schauen
+      const t = this._dirToClosest(); this.facingAngle = t.ang;
+    }
+    // Während Active/Recovery: Facing beibehalten (nicht drehen)
 
     // Arena-Bounds
     const A = world.arena; const pad = this.radius+2;
