@@ -163,6 +163,7 @@ def update_fsm(fighter_id, state_obj):
     # Context bauen
     ctx = {
         "me": me,
+        "enemy": enemy,  # WICHTIG: Für zukünftige Taktik-Module
         "dist": dist,
         "hp_ratio": hp_ratio,
         "cds": state_obj.get("cooldowns", {}),
